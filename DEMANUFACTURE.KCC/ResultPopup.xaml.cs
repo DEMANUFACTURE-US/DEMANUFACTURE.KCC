@@ -9,6 +9,16 @@ namespace DEMANUFACTURE.KCC
         {
             InitializeComponent();
             
+            if (string.IsNullOrWhiteSpace(title))
+            {
+                title = "Success";
+            }
+            
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                message = "Operation completed successfully.";
+            }
+            
             ResultTitle.Text = title;
             ResultMessage.Text = message;
         }

@@ -22,7 +22,6 @@
             </Border>
             <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
                 <TextBlock x:Name="ResultTitle" Text="Success" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource SuccessBrush}"/>
-                <TextBlock Text="Configuration applied successfully" Foreground="{StaticResource TextMutedBrush}" FontSize="12"/>
             </StackPanel>
         </StackPanel>
         
