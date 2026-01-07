@@ -1,4 +1,4 @@
-# DEMANUFACTURE.KCC - Keeper Configuration Creator
+# McK.KCC - Keeper Configuration Creator
 
 A Windows WPF application that creates the `KeeperConfig` environment variable for Keeper Security configuration.
 
@@ -35,7 +35,7 @@ The application creates/updates the following environment variable:
 
 1. Download the latest release
 2. Extract the files to your desired location
-3. Run `DEMANUFACTURE.KCC.exe`
+3. Run `McK.KCC.exe`
 4. When prompted by UAC, click "Yes" to allow administrator access
 
 ## Usage
@@ -56,11 +56,11 @@ The application creates/updates the following environment variable:
 ### Build Steps
 
 ```bash
-cd DEMANUFACTURE.KCC/DEMANUFACTURE.KCC
+cd McK.KCC/McK.KCC
 dotnet build
 ```
 
-Or open `DEMANUFACTURE.KCC.sln` in Visual Studio and build the solution.
+Or open `McK.KCC.sln` in Visual Studio and build the solution.
 
 ### Running
 
@@ -98,16 +98,16 @@ Common errors:
 ## Project Structure
 
 ```
-DEMANUFACTURE.KCC/
-├── DEMANUFACTURE.KCC.sln          # Solution file
-└── DEMANUFACTURE.KCC/
+McK.KCC/
+├── McK.KCC.sln          # Solution file
+└── McK.KCC/
     ├── App.xaml                    # Application definition
     ├── App.xaml.cs                 # Application code-behind
     ├── MainWindow.xaml             # Main window UI
     ├── MainWindow.xaml.cs          # Main window logic
     ├── ErrorWindow.xaml            # Error dialog UI
     ├── ErrorWindow.xaml.cs         # Error dialog logic
-    ├── DEMANUFACTURE.KCC.csproj    # Project file
+    ├── McK.KCC.csproj    # Project file
     ├── app.manifest                # Application manifest (admin elevation)
     ├── config.json                 # Environment variable configuration
     ├── Resources/
@@ -118,4 +118,4 @@ DEMANUFACTURE.KCC/
 
 ## License
 
-This project is part of the DEMANUFACTURE suite of tools.
+This project is part of the McK suite of tools.

@@ -4,7 +4,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows;
 
-namespace DEMANUFACTURE.KCC
+namespace McK.KCC
 {
     public partial class MainWindow : Window
     {

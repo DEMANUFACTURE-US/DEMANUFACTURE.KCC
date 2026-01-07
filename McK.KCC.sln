@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DEMANUFACTURE.KCC", "DEMANUFACTURE.KCC\DEMANUFACTURE.KCC.csproj", "{E7A8F3B1-9C4D-4E5A-B2F6-8D7C9E0A1B3C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "McK.KCC", "McK.KCC\McK.KCC.csproj", "{E7A8F3B1-9C4D-4E5A-B2F6-8D7C9E0A1B3C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
