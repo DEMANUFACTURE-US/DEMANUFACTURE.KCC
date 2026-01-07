@@ -5,18 +5,21 @@ namespace DEMANUFACTURE.KCC
 {
     public partial class ResultPopup : Window
     {
+        private const string DefaultTitle = "Success";
+        private const string DefaultMessage = "Operation completed successfully.";
+
         public ResultPopup(string title, string message)
         {
             InitializeComponent();
             
             if (string.IsNullOrWhiteSpace(title))
             {
-                title = "Success";
+                title = DefaultTitle;
             }
             
             if (string.IsNullOrWhiteSpace(message))
             {
-                message = "Operation completed successfully.";
+                message = DefaultMessage;
             }
             
             ResultTitle.Text = title;
