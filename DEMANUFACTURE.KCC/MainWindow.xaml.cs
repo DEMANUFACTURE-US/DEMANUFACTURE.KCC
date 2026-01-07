@@ -3,7 +3,6 @@ using System.IO;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Windows;
-using System.Windows.Media;
 
 namespace DEMANUFACTURE.KCC
 {
@@ -69,25 +68,26 @@ namespace DEMANUFACTURE.KCC
 
         private void ShowSuccess(bool userExisted, bool systemExisted)
         {
-            StatusBorder.Visibility = Visibility.Visible;
-            StatusBorder.Background = new SolidColorBrush(Color.FromRgb(0x1E, 0x3A, 0x2F));
-            StatusIcon.Text = "✓";
-            StatusIcon.Foreground = (Brush)FindResource("SuccessBrush");
-            StatusTitle.Foreground = (Brush)FindResource("SuccessBrush");
+            string title;
+            string message;
             
             string userAction = userExisted ? "overwritten" : "created";
             string systemAction = systemExisted ? "overwritten" : "created";
             
             if (userExisted || systemExisted)
             {
-                StatusTitle.Text = "Environment Variable Updated";
-                StatusMessage.Text = $"User scope: {userAction}\nSystem scope: {systemAction}";
+                title = "Environment Variable Updated";
+                message = $"User scope: {userAction}\nSystem scope: {systemAction}";
             }
             else
             {
-                StatusTitle.Text = "Environment Variable Created";
-                StatusMessage.Text = $"{_variableName} has been added to both User and System scopes.";
+                title = "Environment Variable Created";
+                message = $"{_variableName} has been added to both User and System scopes.";
             }
+            
+            var resultPopup = new ResultPopup(title, message);
+            resultPopup.Owner = this;
+            resultPopup.ShowDialog();
         }
 
         private void ShowError(string title, string message)

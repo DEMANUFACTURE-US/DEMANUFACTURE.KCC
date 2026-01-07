@@ -1,0 +1,48 @@
+<Window x:Class="DEMANUFACTURE.KCC.ResultPopup"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Success" 
+        Height="280" Width="450"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        Icon="Resources/skull.ico"
+        Background="{StaticResource BackgroundDarkBrush}">
+    
+    <Grid Margin="24">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,16">
+            <Border Width="40" Height="40" CornerRadius="8" Background="#1E3A2F">
+                <TextBlock Text="✓" FontSize="20" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="{StaticResource SuccessBrush}"/>
+            </Border>
+            <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                <TextBlock x:Name="ResultTitle" Text="Success" FontSize="16" FontWeight="SemiBold" Foreground="{StaticResource SuccessBrush}"/>
+            </StackPanel>
+        </StackPanel>
+        
+        <!-- Result Message -->
+        <Border Grid.Row="1" Background="{StaticResource BackgroundLightBrush}" CornerRadius="8" Padding="12">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <TextBlock x:Name="ResultMessage" Text="" 
+                           Foreground="{StaticResource TextSecondaryBrush}" 
+                           FontSize="13"
+                           TextWrapping="Wrap"/>
+            </ScrollViewer>
+        </Border>
+        
+        <!-- Buttons -->
+        <Button Grid.Row="2" x:Name="BtnHuzzah" Style="{StaticResource PrimaryButton}" 
+                Click="BtnHuzzah_Click" Margin="0,16,0,0"
+                HorizontalAlignment="Stretch" Padding="20,14">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                <TextBlock Text="🎉" FontSize="16" Margin="0,0,10,0"/>
+                <TextBlock Text="HUZZAH!" FontSize="14" FontWeight="SemiBold"/>
+            </StackPanel>
+        </Button>
+    </Grid>
+</Window>
