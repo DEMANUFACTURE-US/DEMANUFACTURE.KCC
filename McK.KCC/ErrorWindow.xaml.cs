@@ -1,7 +1,7 @@
 using System;
 using System.Windows;
 
-namespace DEMANUFACTURE.KCC
+namespace McK.KCC
 {
     public partial class ErrorWindow : Window
     {
