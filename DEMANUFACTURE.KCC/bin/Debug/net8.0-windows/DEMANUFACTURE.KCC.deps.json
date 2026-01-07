@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "DEMANUFACTURE.KCC/1.0.0": {
+        "runtime": {
+          "DEMANUFACTURE.KCC.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "DEMANUFACTURE.KCC/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}
