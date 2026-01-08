@@ -6,6 +6,17 @@ namespace McK.KCC
     {
         private void Application_Startup(object sender, StartupEventArgs e)
         {
+            // Check if this is a permission-check-only invocation (helper process)
+            if (PermissionChecker.IsPermissionCheckOnly())
+            {
+                PermissionChecker.RunPermissionCheckAndExit();
+                return;
+            }
+
+            // Prevent automatic shutdown when the preloading window closes
+            // This ensures we can show the main window after the modal dialog closes
+            ShutdownMode = ShutdownMode.OnExplicitShutdown;
+
             // Show the preloading window to check permissions
             var preloadingWindow = new PreloadingWindow();
             preloadingWindow.ShowDialog();
@@ -15,6 +26,11 @@ namespace McK.KCC
             {
                 var mainWindow = new MainWindow();
                 mainWindow.Show();
+
+                // Now that the main window is shown, allow normal shutdown behavior
+                // when the main window is closed
+                ShutdownMode = ShutdownMode.OnMainWindowClose;
+                MainWindow = mainWindow;
             }
             else
             {
