@@ -15,6 +15,10 @@
     <Color x:Key="SuccessColor">#00B894</Color>
     <Color x:Key="WarningColor">#FFD93D</Color>
     <Color x:Key="ErrorColor">#E74C3C</Color>
+    <Color x:Key="StatusSuccessBackgroundColor">#1E3A2F</Color>
+    <Color x:Key="StatusWarningBackgroundColor">#3A351E</Color>
+    <Color x:Key="StatusErrorBackgroundColor">#3A2626</Color>
+    <Color x:Key="StatusInfoBackgroundColor">#1E3A2F</Color>
     
     <!-- Solid Brushes -->
     <SolidColorBrush x:Key="BackgroundDarkBrush" Color="{StaticResource BackgroundDarkColor}"/>
@@ -30,6 +34,10 @@
     <SolidColorBrush x:Key="SuccessBrush" Color="{StaticResource SuccessColor}"/>
     <SolidColorBrush x:Key="WarningBrush" Color="{StaticResource WarningColor}"/>
     <SolidColorBrush x:Key="ErrorBrush" Color="{StaticResource ErrorColor}"/>
+    <SolidColorBrush x:Key="StatusSuccessBackgroundBrush" Color="{StaticResource StatusSuccessBackgroundColor}"/>
+    <SolidColorBrush x:Key="StatusWarningBackgroundBrush" Color="{StaticResource StatusWarningBackgroundColor}"/>
+    <SolidColorBrush x:Key="StatusErrorBackgroundBrush" Color="{StaticResource StatusErrorBackgroundColor}"/>
+    <SolidColorBrush x:Key="StatusInfoBackgroundBrush" Color="{StaticResource StatusInfoBackgroundColor}"/>
 
     <!-- Fonts -->
     <FontFamily x:Key="PrimaryFont">Segoe UI</FontFamily>

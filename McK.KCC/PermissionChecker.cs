@@ -74,6 +74,15 @@ namespace McK.KCC
         }
 
         /// <summary>
+        /// Gets the current executable path safely.
+        /// </summary>
+        /// <returns>The executable path, or null if it cannot be determined.</returns>
+        private static string? GetExecutablePath()
+        {
+            return Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName;
+        }
+
+        /// <summary>
         /// Restarts the application with elevated (administrator) privileges.
         /// </summary>
         /// <returns>True if the restart was initiated, false if it failed.</returns>
@@ -81,9 +90,14 @@ namespace McK.KCC
         {
             try
             {
+                var exePath = GetExecutablePath();
+                
+                if (string.IsNullOrEmpty(exePath))
+                    return false;
+
                 var processInfo = new ProcessStartInfo
                 {
-                    FileName = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName,
+                    FileName = exePath,
                     UseShellExecute = true,
                     Verb = "runas", // This triggers UAC elevation
                     Arguments = "--elevated"
@@ -101,25 +115,29 @@ namespace McK.KCC
 
         /// <summary>
         /// Restarts the application prompting for different user credentials.
-        /// Uses Windows "Run as Different User" functionality.
+        /// Uses Windows built-in runas functionality to prompt for credentials.
         /// </summary>
         /// <returns>True if the restart was initiated, false if it failed.</returns>
         public static bool RestartAsDifferentUser()
         {
             try
             {
-                var exePath = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName;
+                var exePath = GetExecutablePath();
                 
                 if (string.IsNullOrEmpty(exePath))
                     return false;
 
-                // Use runas command with /user flag to prompt for different user credentials
-                // This is equivalent to Shift+Right-Click > "Run as different user"
+                // Use runas.exe directly without cmd.exe to avoid command injection
+                // The /noprofile flag speeds up the process by not loading the user profile
+                // The /user: flag without a specific user will prompt for credentials
                 var processInfo = new ProcessStartInfo
                 {
-                    FileName = "cmd.exe",
-                    Arguments = $"/c runas /user:DOMAIN\\Administrator \"{exePath} --different-user\"",
-                    UseShellExecute = true
+                    FileName = "runas.exe",
+                    // Use /savecred to potentially use cached credentials, prompts if not available
+                    // /env passes current environment variables
+                    Arguments = $"/env /savecred /user:Administrator \"{exePath}\" --different-user",
+                    UseShellExecute = false,
+                    CreateNoWindow = false
                 };
 
                 Process.Start(processInfo);

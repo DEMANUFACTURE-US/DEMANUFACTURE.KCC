@@ -280,33 +280,35 @@ namespace McK.KCC
             StatusMessage.Text = message;
 
             SolidColorBrush brush;
+            SolidColorBrush backgroundBrush;
             string icon;
 
             if (isSuccess)
             {
                 brush = (SolidColorBrush)FindResource("SuccessBrush");
+                backgroundBrush = (SolidColorBrush)FindResource("StatusSuccessBackgroundBrush");
                 icon = "✓";
-                StatusBorder.Background = new SolidColorBrush(Color.FromRgb(0x1E, 0x3A, 0x2F));
             }
             else if (isWarning)
             {
                 brush = (SolidColorBrush)FindResource("WarningBrush");
+                backgroundBrush = (SolidColorBrush)FindResource("StatusWarningBackgroundBrush");
                 icon = "⚠";
-                StatusBorder.Background = new SolidColorBrush(Color.FromRgb(0x3A, 0x35, 0x1E));
             }
             else if (isError)
             {
                 brush = (SolidColorBrush)FindResource("ErrorBrush");
+                backgroundBrush = (SolidColorBrush)FindResource("StatusErrorBackgroundBrush");
                 icon = "✗";
-                StatusBorder.Background = new SolidColorBrush(Color.FromRgb(0x3A, 0x26, 0x26));
             }
             else
             {
                 brush = (SolidColorBrush)FindResource("AccentBrush");
+                backgroundBrush = (SolidColorBrush)FindResource("StatusInfoBackgroundBrush");
                 icon = "⏳";
-                StatusBorder.Background = new SolidColorBrush(Color.FromRgb(0x1E, 0x3A, 0x2F));
             }
 
+            StatusBorder.Background = backgroundBrush;
             StatusTitle.Foreground = brush;
             StatusIcon.Foreground = brush;
             StatusIcon.Text = icon;
