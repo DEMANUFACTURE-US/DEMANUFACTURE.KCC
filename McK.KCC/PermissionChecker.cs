@@ -500,6 +500,8 @@ namespace McK.KCC
                     // Exit code 0 means permission check succeeded
                     if (process.ExitCode == 0)
                     {
+                        // Store the validated credentials for reuse when restarting the app
+                        StoreValidatedCredentials(userNameOnly, userDomain!, securePassword);
                         return true;
                     }
                     
@@ -554,6 +556,89 @@ namespace McK.KCC
         {
             bool canWrite = CanWriteToRegistry();
             Environment.Exit(canWrite ? 0 : 1);
+        }
+
+        /// <summary>
+        /// Checks if the application was launched with elevated permissions or different user credentials,
+        /// meaning the current process already has the necessary registry write permissions.
+        /// </summary>
+        /// <returns>True if running with granted permissions (via --elevated or --different-user args), false otherwise.</returns>
+        public static bool IsRunningWithGrantedPermissions()
+        {
+            var args = Environment.GetCommandLineArgs();
+            foreach (var arg in args)
+            {
+                if (arg == "--elevated" || arg == "--different-user")
+                    return true;
+            }
+            return false;
+        }
+
+        // Storage for validated credentials from Stage 3
+        private static string? _validatedUserName;
+        private static string? _validatedDomain;
+        private static SecureString? _validatedPassword;
+
+        /// <summary>
+        /// Stores validated credentials for reuse when restarting the app.
+        /// </summary>
+        /// <param name="userName">The username (without domain).</param>
+        /// <param name="domain">The domain.</param>
+        /// <param name="password">The secure password.</param>
+        internal static void StoreValidatedCredentials(string userName, string domain, SecureString password)
+        {
+            _validatedUserName = userName;
+            _validatedDomain = domain;
+            // Create a copy of the SecureString since the original will be disposed
+            _validatedPassword = password.Copy();
+            _validatedPassword.MakeReadOnly();
+        }
+
+        /// <summary>
+        /// Clears any stored validated credentials.
+        /// </summary>
+        internal static void ClearValidatedCredentials()
+        {
+            _validatedUserName = null;
+            _validatedDomain = null;
+            _validatedPassword?.Dispose();
+            _validatedPassword = null;
+        }
+
+        /// <summary>
+        /// Restarts the application using previously stored validated credentials.
+        /// Used when Stage 3 passes and we need to restart with those credentials.
+        /// </summary>
+        /// <returns>True if restart was initiated, false otherwise.</returns>
+        public static bool RestartWithValidatedCredentials()
+        {
+            if (_validatedUserName == null || _validatedDomain == null || _validatedPassword == null)
+                return false;
+
+            var exePath = GetExecutablePath();
+            if (string.IsNullOrEmpty(exePath))
+                return false;
+
+            try
+            {
+                var processInfo = new ProcessStartInfo
+                {
+                    FileName = exePath,
+                    Arguments = "--different-user",
+                    UseShellExecute = false,
+                    LoadUserProfile = true,
+                    UserName = _validatedUserName,
+                    Password = _validatedPassword,
+                    Domain = _validatedDomain
+                };
+
+                var process = Process.Start(processInfo);
+                return process != null;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
     }
 }
