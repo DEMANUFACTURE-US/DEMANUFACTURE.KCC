@@ -6,7 +6,7 @@
     <Color x:Key="BackgroundMediumColor">#243447</Color>
     <Color x:Key="BackgroundLightColor">#2E3E52</Color>
     <Color x:Key="CardColor">#1E3044</Color>
-    <Color x:Key="AccentColor">#0067A5</Color>
+    <Color x:Key="AccentColor">#0066A1</Color>
     <Color x:Key="AccentHoverColor">#0080C8</Color>
     <Color x:Key="AccentPressedColor">#005588</Color>
     <Color x:Key="ButtonHoverColor">#3A4A5A</Color>
@@ -15,9 +15,9 @@
     <Color x:Key="TextSecondaryColor">#B8C5D4</Color>
     <Color x:Key="TextMutedColor">#7A8A9A</Color>
     <Color x:Key="BorderColor">#3A4A5A</Color>
-    <Color x:Key="SuccessColor">#0067A5</Color>
+    <Color x:Key="SuccessColor">#0066A1</Color>
     <Color x:Key="WarningColor">#F5A623</Color>
-    <Color x:Key="ErrorColor">#C41230</Color>
+    <Color x:Key="ErrorColor">#C31230</Color>
     <Color x:Key="GreenColor">#28A745</Color>
     <Color x:Key="GreenHoverColor">#34D058</Color>
     <Color x:Key="GreenPressedColor">#22863A</Color>
