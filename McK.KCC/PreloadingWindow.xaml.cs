@@ -110,16 +110,51 @@ namespace McK.KCC
             {
                 SetStageSuccess(2);
                 UpdateStatus("Administrator permissions verified!", 
-                    "Administrator has registry write access. Loading application...",
+                    "Administrator has registry write access. Restarting with elevated permissions...",
                     isSuccess: true);
 
                 await Task.Delay(1000);
 
                 if (_cancelled) return false;
 
-                _permissionGranted = true;
-                Close();
-                return true;
+                // Restart the application with administrator elevation
+                // The restarted app will have the --elevated flag and skip permission checks
+                var restartedProcess = PermissionChecker.RestartAsAdministrator();
+                if (restartedProcess != null)
+                {
+                    // Wait briefly and verify the new process is still running
+                    await Task.Delay(500);
+                    
+                    if (!restartedProcess.HasExited)
+                    {
+                        // Don't set _permissionGranted to true because the current process should exit
+                        // The new elevated process will handle the MainWindow
+                        Application.Current.Shutdown();
+                        return true;
+                    }
+                    else
+                    {
+                        // Process exited immediately - treat as failure
+                        SetStageFailed(2);
+                        Stage2Status.Text = "Restart failed";
+                        UpdateStatus("Requesting different user credentials...", 
+                            "Elevated process exited unexpectedly. Attempting to use different user credentials...",
+                            isWarning: true);
+                        await Task.Delay(1000);
+                        return false;
+                    }
+                }
+                else
+                {
+                    // If restart failed, continue to Stage 3
+                    SetStageFailed(2);
+                    Stage2Status.Text = "Restart failed";
+                    UpdateStatus("Requesting different user credentials...", 
+                        "Failed to restart with administrator privileges. Attempting to use different user credentials...",
+                        isWarning: true);
+                    await Task.Delay(1000);
+                    return false;
+                }
             }
             else
             {
@@ -146,21 +181,64 @@ namespace McK.KCC
             if (_cancelled) return;
 
             // Use helper process to check permissions with different credentials
+            // This will also store the validated credentials for reuse
             bool canWrite = PermissionChecker.CheckPermissionAsDifferentUser();
 
             if (canWrite)
             {
                 SetStageSuccess(3);
                 UpdateStatus("Permissions verified!", 
-                    "User has registry write access. Loading application...",
+                    "User has registry write access. Restarting with user credentials...",
                     isSuccess: true);
 
                 await Task.Delay(1000);
 
                 if (_cancelled) return;
 
-                _permissionGranted = true;
-                Close();
+                // Restart the application with the validated user credentials
+                // The restarted app will have the --different-user flag and skip permission checks
+                var restartedProcess = PermissionChecker.RestartWithValidatedCredentials();
+                if (restartedProcess != null)
+                {
+                    // Wait briefly and verify the new process is still running
+                    await Task.Delay(500);
+                    
+                    if (!restartedProcess.HasExited)
+                    {
+                        // Don't set _permissionGranted to true because the current process should exit
+                        // The new process will handle the MainWindow
+                        Application.Current.Shutdown();
+                        return;
+                    }
+                    else
+                    {
+                        // Process exited immediately - treat as failure
+                        SetStageFailed(3);
+                        UpdateStatus("Permission check failed", 
+                            "Process with user credentials exited unexpectedly.",
+                            isError: true);
+
+                        await Task.Delay(1500);
+
+                        if (_cancelled) return;
+
+                        ShowPermissionDeniedWindow();
+                    }
+                }
+                else
+                {
+                    // If restart failed, show error
+                    SetStageFailed(3);
+                    UpdateStatus("Permission check failed", 
+                        "Failed to restart with user credentials.",
+                        isError: true);
+
+                    await Task.Delay(1500);
+
+                    if (_cancelled) return;
+
+                    ShowPermissionDeniedWindow();
+                }
             }
             else
             {
