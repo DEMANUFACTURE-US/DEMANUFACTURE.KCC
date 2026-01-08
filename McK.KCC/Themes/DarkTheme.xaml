@@ -8,6 +8,9 @@
     <Color x:Key="CardColor">#1E3044</Color>
     <Color x:Key="AccentColor">#0067A5</Color>
     <Color x:Key="AccentHoverColor">#0080C8</Color>
+    <Color x:Key="AccentPressedColor">#005588</Color>
+    <Color x:Key="ButtonHoverColor">#3A4A5A</Color>
+    <Color x:Key="ButtonPressedColor">#4A5A6A</Color>
     <Color x:Key="TextPrimaryColor">#FFFFFF</Color>
     <Color x:Key="TextSecondaryColor">#B8C5D4</Color>
     <Color x:Key="TextMutedColor">#7A8A9A</Color>
@@ -27,6 +30,9 @@
     <SolidColorBrush x:Key="CardBrush" Color="{StaticResource CardColor}"/>
     <SolidColorBrush x:Key="AccentBrush" Color="{StaticResource AccentColor}"/>
     <SolidColorBrush x:Key="AccentHoverBrush" Color="{StaticResource AccentHoverColor}"/>
+    <SolidColorBrush x:Key="AccentPressedBrush" Color="{StaticResource AccentPressedColor}"/>
+    <SolidColorBrush x:Key="ButtonHoverBrush" Color="{StaticResource ButtonHoverColor}"/>
+    <SolidColorBrush x:Key="ButtonPressedBrush" Color="{StaticResource ButtonPressedColor}"/>
     <SolidColorBrush x:Key="TextPrimaryBrush" Color="{StaticResource TextPrimaryColor}"/>
     <SolidColorBrush x:Key="TextSecondaryBrush" Color="{StaticResource TextSecondaryColor}"/>
     <SolidColorBrush x:Key="TextMutedBrush" Color="{StaticResource TextMutedColor}"/>
@@ -69,10 +75,10 @@
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsMouseOver" Value="True">
-                            <Setter TargetName="border" Property="Background" Value="#3A4A5A"/>
+                            <Setter TargetName="border" Property="Background" Value="{StaticResource ButtonHoverBrush}"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="border" Property="Background" Value="#4A5A6A"/>
+                            <Setter TargetName="border" Property="Background" Value="{StaticResource ButtonPressedBrush}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.5"/>
@@ -102,7 +108,7 @@
                             <Setter TargetName="border" Property="Background" Value="{StaticResource AccentHoverBrush}"/>
                         </Trigger>
                         <Trigger Property="IsPressed" Value="True">
-                            <Setter TargetName="border" Property="Background" Value="#005588"/>
+                            <Setter TargetName="border" Property="Background" Value="{StaticResource AccentPressedBrush}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Opacity" Value="0.5"/>
