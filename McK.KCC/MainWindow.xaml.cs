@@ -63,12 +63,14 @@ namespace McK.KCC
                 UserScopeBorder.BorderBrush = (SolidColorBrush)FindResource("GreenBrush");
                 BtnUserScope.Style = (Style)FindResource("DangerButton");
                 BtnUserScopeText.Text = "REMOVE";
+                UserScopeText.Text = "Scope: User - Present";
             }
             else
             {
                 UserScopeBorder.BorderBrush = (SolidColorBrush)FindResource("WarningBrush");
                 BtnUserScope.Style = (Style)FindResource("SuccessButton");
                 BtnUserScopeText.Text = "UPDATE";
+                UserScopeText.Text = "Scope: User - Not Present";
             }
             
             // Update System Scope UI
@@ -77,12 +79,14 @@ namespace McK.KCC
                 SystemScopeBorder.BorderBrush = (SolidColorBrush)FindResource("GreenBrush");
                 BtnSystemScope.Style = (Style)FindResource("DangerButton");
                 BtnSystemScopeText.Text = "REMOVE";
+                SystemScopeText.Text = "Scope: System - Present";
             }
             else
             {
                 SystemScopeBorder.BorderBrush = (SolidColorBrush)FindResource("WarningBrush");
                 BtnSystemScope.Style = (Style)FindResource("SuccessButton");
                 BtnSystemScopeText.Text = "UPDATE";
+                SystemScopeText.Text = "Scope: System - Not Present";
             }
         }
 
@@ -253,35 +257,50 @@ namespace McK.KCC
                 var sitesWithoutSetting = sortedSites.Where(s => !s.HasAppSetting).ToList();
                 var sitesWithSetting = sortedSites.Where(s => s.HasAppSetting).ToList();
                 
-                foreach (var site in sitesWithoutSetting)
+                // Add header for sites without app setting
+                if (sitesWithoutSetting.Any())
                 {
                     itemsWithSeparator.Add(new IISSiteDisplayItem
                     {
-                        DisplayName = site.Name,
-                        TextColor = (SolidColorBrush)this.FindResource("WarningBrush"),
-                        Site = site
-                    });
-                }
-                
-                if (sitesWithoutSetting.Any() && sitesWithSetting.Any())
-                {
-                    itemsWithSeparator.Add(new IISSiteDisplayItem
-                    {
-                        DisplayName = "─────────────────────",
+                        DisplayName = "── Sites Without Keeper Config ──",
                         TextColor = (SolidColorBrush)this.FindResource("TextMutedBrush"),
                         Site = null,
-                        IsSeparator = true
+                        IsSeparator = true,
+                        FontWeight = FontWeights.Bold
                     });
+                    
+                    foreach (var site in sitesWithoutSetting)
+                    {
+                        itemsWithSeparator.Add(new IISSiteDisplayItem
+                        {
+                            DisplayName = "   " + site.Name,
+                            TextColor = (SolidColorBrush)this.FindResource("WarningBrush"),
+                            Site = site
+                        });
+                    }
                 }
                 
-                foreach (var site in sitesWithSetting)
+                // Add header for sites with app setting
+                if (sitesWithSetting.Any())
                 {
                     itemsWithSeparator.Add(new IISSiteDisplayItem
                     {
-                        DisplayName = site.Name,
-                        TextColor = (SolidColorBrush)this.FindResource("GreenBrush"),
-                        Site = site
+                        DisplayName = "── Sites With Keeper Config ──",
+                        TextColor = (SolidColorBrush)this.FindResource("TextMutedBrush"),
+                        Site = null,
+                        IsSeparator = true,
+                        FontWeight = FontWeights.Bold
                     });
+                    
+                    foreach (var site in sitesWithSetting)
+                    {
+                        itemsWithSeparator.Add(new IISSiteDisplayItem
+                        {
+                            DisplayName = "   " + site.Name,
+                            TextColor = (SolidColorBrush)this.FindResource("GreenBrush"),
+                            Site = site
+                        });
+                    }
                 }
                 
                 CmbIISSites.ItemsSource = itemsWithSeparator;
@@ -528,5 +547,6 @@ namespace McK.KCC
         public SolidColorBrush TextColor { get; set; } = new SolidColorBrush(Colors.White);
         public IISSiteInfo? Site { get; set; }
         public bool IsSeparator { get; set; }
+        public FontWeight FontWeight { get; set; } = FontWeights.Normal;
     }
 }
