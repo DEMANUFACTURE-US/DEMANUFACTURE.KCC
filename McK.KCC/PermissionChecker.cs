@@ -160,20 +160,24 @@ namespace McK.KCC
         /// Restarts the application prompting for different user credentials.
         /// Uses Windows CredUI API to show a standard credentials dialog that allows
         /// the user to enter username and password, defaulting to the current domain.
+        /// The dialog will re-prompt if credentials are invalid.
         /// </summary>
-        /// <returns>True if the restart was initiated, false if it failed or cancelled.</returns>
+        /// <returns>True if the restart was initiated, false if it failed or was cancelled.</returns>
         public static bool RestartAsDifferentUser()
         {
-            try
-            {
-                var exePath = GetExecutablePath();
-                
-                if (string.IsNullOrEmpty(exePath))
-                    return false;
+            var exePath = GetExecutablePath();
+            
+            if (string.IsNullOrEmpty(exePath))
+                return false;
 
-                // Get the current domain for the default username
-                string domain = Environment.UserDomainName;
-                
+            // Get the current domain for the default username
+            string domain = Environment.UserDomainName;
+            
+            // Keep prompting until user cancels or provides valid credentials
+            int lastAuthError = 0;
+            
+            while (true)
+            {
                 // Prepare username with domain prefix as default
                 var userNameBuilder = new StringBuilder(domain + @"\", CREDUI_MAX_USERNAME_LENGTH);
                 var passwordBuilder = new StringBuilder(CREDUI_MAX_PASSWORD_LENGTH);
@@ -182,7 +186,9 @@ namespace McK.KCC
                 {
                     cbSize = Marshal.SizeOf(typeof(CREDUI_INFO)),
                     hwndParent = IntPtr.Zero,
-                    pszMessageText = "Enter credentials for a user account with registry write permissions.",
+                    pszMessageText = lastAuthError != 0 
+                        ? "The username or password is incorrect. Please try again."
+                        : "Enter credentials for a user account with registry write permissions.",
                     pszCaptionText = "Keeper Configuration Creator - User Credentials",
                     hbmBanner = IntPtr.Zero
                 };
@@ -197,7 +203,7 @@ namespace McK.KCC
                     ref credUI,
                     "KeeperConfigCreator",
                     IntPtr.Zero,
-                    0,
+                    lastAuthError,
                     userNameBuilder,
                     CREDUI_MAX_USERNAME_LENGTH,
                     passwordBuilder,
@@ -229,6 +235,11 @@ namespace McK.KCC
                     userNameOnly = parts[0];
                     userDomain = parts[1];
                 }
+                else
+                {
+                    // No domain specified, use current domain
+                    userDomain = domain;
+                }
 
                 // Create a SecureString for the password
                 var securePassword = new SecureString();
@@ -251,20 +262,53 @@ namespace McK.KCC
                         LoadUserProfile = true,
                         UserName = userNameOnly,
                         Password = securePassword,
-                        Domain = userDomain ?? domain
+                        Domain = userDomain
                     };
 
-                    Process.Start(processInfo);
-                    return true;
-                }
-                finally
-                {
+                    var process = Process.Start(processInfo);
+                    
+                    // Check if process started successfully
+                    if (process != null)
+                    {
+                        securePassword.Dispose();
+                        return true;
+                    }
+                    
+                    // Process didn't start, treat as auth error
+                    lastAuthError = 1326; // ERROR_LOGON_FAILURE
                     securePassword.Dispose();
                 }
-            }
-            catch (Exception)
-            {
-                return false;
+                catch (System.ComponentModel.Win32Exception ex)
+                {
+                    securePassword.Dispose();
+                    
+                    // Check for authentication-related errors
+                    // 1326 = ERROR_LOGON_FAILURE (incorrect username or password)
+                    // 1327 = ERROR_ACCOUNT_RESTRICTION
+                    // 1328 = ERROR_INVALID_LOGON_HOURS
+                    // 1329 = ERROR_INVALID_WORKSTATION
+                    // 1330 = ERROR_PASSWORD_EXPIRED
+                    // 1331 = ERROR_ACCOUNT_DISABLED
+                    if (ex.NativeErrorCode == 1326 || 
+                        ex.NativeErrorCode == 1327 ||
+                        ex.NativeErrorCode == 1328 ||
+                        ex.NativeErrorCode == 1329 ||
+                        ex.NativeErrorCode == 1330 ||
+                        ex.NativeErrorCode == 1331)
+                    {
+                        // Re-prompt with the error
+                        lastAuthError = ex.NativeErrorCode;
+                        continue;
+                    }
+                    
+                    // Other Win32 errors - don't retry
+                    return false;
+                }
+                catch (Exception)
+                {
+                    securePassword.Dispose();
+                    return false;
+                }
             }
         }
 
