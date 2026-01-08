@@ -60,13 +60,13 @@ namespace McK.KCC
             // Update User Scope UI
             if (_userScopeExists)
             {
-                UserScopeBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(40, 167, 69)); // Green
+                UserScopeBorder.BorderBrush = (SolidColorBrush)FindResource("GreenBrush");
                 BtnUserScope.Style = (Style)FindResource("DangerButton");
                 BtnUserScopeText.Text = "REMOVE";
             }
             else
             {
-                UserScopeBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(245, 166, 35)); // Orange
+                UserScopeBorder.BorderBrush = (SolidColorBrush)FindResource("WarningBrush");
                 BtnUserScope.Style = (Style)FindResource("SuccessButton");
                 BtnUserScopeText.Text = "UPDATE";
             }
@@ -74,13 +74,13 @@ namespace McK.KCC
             // Update System Scope UI
             if (_systemScopeExists)
             {
-                SystemScopeBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(40, 167, 69)); // Green
+                SystemScopeBorder.BorderBrush = (SolidColorBrush)FindResource("GreenBrush");
                 BtnSystemScope.Style = (Style)FindResource("DangerButton");
                 BtnSystemScopeText.Text = "REMOVE";
             }
             else
             {
-                SystemScopeBorder.BorderBrush = new SolidColorBrush(Color.FromRgb(245, 166, 35)); // Orange
+                SystemScopeBorder.BorderBrush = (SolidColorBrush)FindResource("WarningBrush");
                 BtnSystemScope.Style = (Style)FindResource("SuccessButton");
                 BtnSystemScopeText.Text = "UPDATE";
             }
@@ -258,7 +258,7 @@ namespace McK.KCC
                     itemsWithSeparator.Add(new IISSiteDisplayItem
                     {
                         DisplayName = site.Name,
-                        TextColor = new SolidColorBrush(Color.FromRgb(245, 166, 35)), // Orange
+                        TextColor = (SolidColorBrush)this.FindResource("WarningBrush"),
                         Site = site
                     });
                 }
@@ -268,7 +268,7 @@ namespace McK.KCC
                     itemsWithSeparator.Add(new IISSiteDisplayItem
                     {
                         DisplayName = "─────────────────────",
-                        TextColor = new SolidColorBrush(Color.FromRgb(122, 138, 154)), // Muted
+                        TextColor = (SolidColorBrush)this.FindResource("TextMutedBrush"),
                         Site = null,
                         IsSeparator = true
                     });
@@ -279,7 +279,7 @@ namespace McK.KCC
                     itemsWithSeparator.Add(new IISSiteDisplayItem
                     {
                         DisplayName = site.Name,
-                        TextColor = new SolidColorBrush(Color.FromRgb(40, 167, 69)), // Green
+                        TextColor = (SolidColorBrush)this.FindResource("GreenBrush"),
                         Site = site
                     });
                 }
@@ -345,12 +345,12 @@ namespace McK.KCC
                 
                 if (site.HasAppSetting)
                 {
-                    BtnIISSite.Style = (Style?)FindResource("DangerButton") ?? BtnIISSite.Style;
+                    BtnIISSite.Style = (Style)FindResource("DangerButton");
                     BtnIISSiteText.Text = "REMOVE";
                 }
                 else
                 {
-                    BtnIISSite.Style = (Style?)FindResource("SuccessButton") ?? BtnIISSite.Style;
+                    BtnIISSite.Style = (Style)FindResource("SuccessButton");
                     BtnIISSiteText.Text = "UPDATE";
                 }
             }
