@@ -12,7 +12,7 @@ Keeper Configuration Creator is a simple utility application designed to set up 
 - **Dual Scope Configuration**: Sets the environment variable in both User and System scopes
 - **Smart Detection**: Detects if the environment variable already exists and notifies whether it was created or overwritten
 - **Error Handling**: Displays detailed error messages with a copy-to-clipboard feature for easy troubleshooting
-- **Modern Dark UI**: Clean, modern interface with a dark theme
+- **Modern Dark UI**: Clean, modern interface with a dark theme featuring McKenney's corporate branding
 - **JSON Configuration**: Environment variable details are stored in a JSON file for easy extension
 
 ## Environment Variable
@@ -111,10 +111,24 @@ McK.KCC/
     ├── app.manifest                # Application manifest (admin elevation)
     ├── config.json                 # Environment variable configuration
     ├── Resources/
-    │   └── skull.ico               # Application icon
+    │   ├── skull.ico               # Application icon (legacy)
+    │   ├── mck.png                 # McKenney's banner logo
+    │   ├── mckcircle.png           # McKenney's circular icon
+    │   └── colorsscheme.png        # McKenney's brand color palette
     └── Themes/
-        └── DarkTheme.xaml          # Dark theme styles
+        └── DarkTheme.xaml          # Dark theme with McKenney's colors
 ```
+
+## Branding
+
+The application uses McKenney's Inc. corporate branding and colors:
+
+- **Primary Blue**: `#0066A1` - Used for accent colors, buttons, and links
+- **Accent Red**: `#C31230` - Used for error states and warnings
+- **Logo**: McKenney's horizontal logo (mck.png)
+- **Icon**: McKenney's circular logo (mckcircle.png)
+
+The color scheme is defined in `Themes/DarkTheme.xaml` and references the brand colors from `Resources/colorsscheme.png`.
 
 ## License
 
