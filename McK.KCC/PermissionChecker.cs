@@ -369,7 +369,7 @@ namespace McK.KCC
                 if (process == null)
                     return false;
 
-                process.WaitForExit(30000); // Wait up to 30 seconds
+                process.WaitForExit(15000); // Wait up to 15 seconds
                 
                 // Exit code 0 means permission check succeeded
                 return process.ExitCode == 0;
@@ -495,7 +495,7 @@ namespace McK.KCC
                     if (process == null)
                         return false;
 
-                    process.WaitForExit(30000); // Wait up to 30 seconds
+                    process.WaitForExit(15000); // Wait up to 15 seconds
                     
                     // Exit code 0 means permission check succeeded
                     if (process.ExitCode == 0)
