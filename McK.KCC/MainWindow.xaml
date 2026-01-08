@@ -18,7 +18,7 @@
         
         <!-- Header -->
         <StackPanel Grid.Row="0" HorizontalAlignment="Stretch" Margin="0,0,0,30">
-            <Image Source="Resources/mck.png" HorizontalAlignment="Stretch" Stretch="Uniform"/>
+            <Image Source="Resources/mck.png" HorizontalAlignment="Stretch" Stretch="Uniform" MaxHeight="80"/>
             <TextBlock Text="Keeper Configuration Creator" FontSize="22" FontWeight="Bold" 
                        Foreground="{StaticResource TextPrimaryBrush}" 
                        HorizontalAlignment="Center" Margin="0,12,0,0"/>
