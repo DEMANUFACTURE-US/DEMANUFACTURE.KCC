@@ -19,7 +19,7 @@
         <!-- Header -->
         <StackPanel Grid.Row="0" HorizontalAlignment="Center" Margin="0,0,0,24">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                <TextBlock Text="💀" FontSize="32" VerticalAlignment="Center"/>
+                <Image Source="Resources/mck.png" Height="32" VerticalAlignment="Center"/>
                 <TextBlock Text="Checking Permissions" FontSize="22" FontWeight="Bold" 
                            Foreground="{StaticResource TextPrimaryBrush}" 
                            Margin="12,0,0,0" VerticalAlignment="Center"/>
