@@ -205,8 +205,15 @@ namespace McK.KCC
             {
                 SetStageFailed(3);
                 UpdateStatus("Permission check failed", 
-                    "None of the attempted user credentials have sufficient permissions to modify the Windows registry. Please contact your system administrator.",
+                    "None of the attempted user credentials have sufficient permissions to modify the Windows registry.",
                     isError: true);
+
+                await Task.Delay(1500);
+
+                if (_cancelled) return;
+
+                // Show the permission denied window and close this one
+                ShowPermissionDeniedWindow();
             }
         }
 
@@ -312,6 +319,18 @@ namespace McK.KCC
             StatusTitle.Foreground = brush;
             StatusIcon.Foreground = brush;
             StatusIcon.Text = icon;
+        }
+
+        private void ShowPermissionDeniedWindow()
+        {
+            // Close this window first, then show the permission denied window
+            // Using Closed event to ensure proper window cleanup before showing the new one
+            Closed += (s, e) =>
+            {
+                var permissionDeniedWindow = new PermissionDeniedWindow();
+                permissionDeniedWindow.Show();
+            };
+            Close();
         }
 
         private void BtnCancel_Click(object sender, RoutedEventArgs e)
