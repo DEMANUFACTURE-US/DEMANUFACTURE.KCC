@@ -28,7 +28,7 @@ namespace McK.KCC
 
         private void BtnHuzzah_Click(object sender, RoutedEventArgs e)
         {
-            Application.Current.Shutdown();
+            this.Close();
         }
     }
 }
