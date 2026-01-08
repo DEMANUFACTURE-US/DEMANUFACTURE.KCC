@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "McK.KCC/1.0.0": {
+        "runtime": {
+          "McK.KCC.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "McK.KCC/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}
