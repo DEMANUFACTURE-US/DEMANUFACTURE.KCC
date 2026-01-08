@@ -5,7 +5,7 @@
         Height="350" Width="450"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
-        Icon="Resources/skull.ico"
+        Icon="Resources/mckcircle.png"
         Background="{StaticResource BackgroundDarkBrush}">
     
     <Grid Margin="30">
@@ -83,7 +83,7 @@
         </Border>
         
         <!-- Current Status Message -->
-        <Border Grid.Row="2" x:Name="StatusBorder" Background="#1E3A2F" CornerRadius="8" Padding="16" Margin="0,0,0,16">
+        <Border Grid.Row="2" x:Name="StatusBorder" Background="{StaticResource StatusInfoBackgroundBrush}" CornerRadius="8" Padding="16" Margin="0,0,0,16">
             <StackPanel>
                 <StackPanel Orientation="Horizontal">
                     <TextBlock x:Name="StatusIcon" Text="⏳" FontSize="16" Foreground="{StaticResource AccentBrush}" Margin="0,0,8,0"/>

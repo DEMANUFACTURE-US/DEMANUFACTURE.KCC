@@ -19,6 +19,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <Resource Include="Resources\skull.ico" />
+    <Resource Include="Resources\mck.png" />
+    <Resource Include="Resources\mckcircle.png" />
+    <Resource Include="Resources\colorsscheme.png" />
   </ItemGroup>
 
 </Project>
