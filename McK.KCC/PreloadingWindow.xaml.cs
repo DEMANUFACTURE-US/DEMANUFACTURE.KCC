@@ -208,6 +208,7 @@ namespace McK.KCC
                         // Don't set _permissionGranted to true because the current process should exit
                         // The new process will handle the MainWindow
                         Application.Current.Shutdown();
+                        return;
                     }
                     else
                     {
