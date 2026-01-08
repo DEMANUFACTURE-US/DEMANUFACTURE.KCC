@@ -241,19 +241,26 @@ namespace McK.KCC
                 // Clear the password from memory
                 passwordBuilder.Clear();
 
-                var processInfo = new ProcessStartInfo
+                try
                 {
-                    FileName = exePath,
-                    Arguments = "--different-user",
-                    UseShellExecute = false,
-                    LoadUserProfile = true,
-                    UserName = userNameOnly,
-                    Password = securePassword,
-                    Domain = userDomain ?? domain
-                };
+                    var processInfo = new ProcessStartInfo
+                    {
+                        FileName = exePath,
+                        Arguments = "--different-user",
+                        UseShellExecute = false,
+                        LoadUserProfile = true,
+                        UserName = userNameOnly,
+                        Password = securePassword,
+                        Domain = userDomain ?? domain
+                    };
 
-                Process.Start(processInfo);
-                return true;
+                    Process.Start(processInfo);
+                    return true;
+                }
+                finally
+                {
+                    securePassword.Dispose();
+                }
             }
             catch (Exception)
             {
