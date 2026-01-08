@@ -28,6 +28,14 @@ namespace McK.KCC
         private const int CREDUI_FLAGS_ALWAYS_SHOW_UI = 0x00080;
         private const int CREDUI_FLAGS_EXPECT_CONFIRMATION = 0x20000;
         private const int CREDUI_FLAGS_EXCLUDE_CERTIFICATES = 0x00008;
+        
+        // Win32 authentication error codes
+        private const int ERROR_LOGON_FAILURE = 1326;
+        private const int ERROR_ACCOUNT_RESTRICTION = 1327;
+        private const int ERROR_INVALID_LOGON_HOURS = 1328;
+        private const int ERROR_INVALID_WORKSTATION = 1329;
+        private const int ERROR_PASSWORD_EXPIRED = 1330;
+        private const int ERROR_ACCOUNT_DISABLED = 1331;
 
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
         private struct CREDUI_INFO
@@ -270,31 +278,17 @@ namespace McK.KCC
                     // Check if process started successfully
                     if (process != null)
                     {
-                        securePassword.Dispose();
                         return true;
                     }
                     
-                    // Process didn't start, treat as auth error
-                    lastAuthError = 1326; // ERROR_LOGON_FAILURE
-                    securePassword.Dispose();
+                    // Process.Start returned null - this can happen for various reasons
+                    // but typically indicates the process couldn't be started
+                    return false;
                 }
                 catch (System.ComponentModel.Win32Exception ex)
                 {
-                    securePassword.Dispose();
-                    
-                    // Check for authentication-related errors
-                    // 1326 = ERROR_LOGON_FAILURE (incorrect username or password)
-                    // 1327 = ERROR_ACCOUNT_RESTRICTION
-                    // 1328 = ERROR_INVALID_LOGON_HOURS
-                    // 1329 = ERROR_INVALID_WORKSTATION
-                    // 1330 = ERROR_PASSWORD_EXPIRED
-                    // 1331 = ERROR_ACCOUNT_DISABLED
-                    if (ex.NativeErrorCode == 1326 || 
-                        ex.NativeErrorCode == 1327 ||
-                        ex.NativeErrorCode == 1328 ||
-                        ex.NativeErrorCode == 1329 ||
-                        ex.NativeErrorCode == 1330 ||
-                        ex.NativeErrorCode == 1331)
+                    // Check for authentication-related errors that should trigger re-prompt
+                    if (IsAuthenticationError(ex.NativeErrorCode))
                     {
                         // Re-prompt with the error
                         lastAuthError = ex.NativeErrorCode;
@@ -306,10 +300,28 @@ namespace McK.KCC
                 }
                 catch (Exception)
                 {
-                    securePassword.Dispose();
                     return false;
                 }
+                finally
+                {
+                    securePassword.Dispose();
+                }
             }
+        }
+
+        /// <summary>
+        /// Determines if the given Win32 error code is an authentication-related error.
+        /// </summary>
+        /// <param name="errorCode">The Win32 error code to check.</param>
+        /// <returns>True if the error is authentication-related, false otherwise.</returns>
+        private static bool IsAuthenticationError(int errorCode)
+        {
+            return errorCode == ERROR_LOGON_FAILURE ||
+                   errorCode == ERROR_ACCOUNT_RESTRICTION ||
+                   errorCode == ERROR_INVALID_LOGON_HOURS ||
+                   errorCode == ERROR_INVALID_WORKSTATION ||
+                   errorCode == ERROR_PASSWORD_EXPIRED ||
+                   errorCode == ERROR_ACCOUNT_DISABLED;
         }
 
         /// <summary>
