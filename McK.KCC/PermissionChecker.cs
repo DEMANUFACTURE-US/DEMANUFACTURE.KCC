@@ -28,6 +28,14 @@ namespace McK.KCC
         private const int CREDUI_FLAGS_ALWAYS_SHOW_UI = 0x00080;
         private const int CREDUI_FLAGS_EXPECT_CONFIRMATION = 0x20000;
         private const int CREDUI_FLAGS_EXCLUDE_CERTIFICATES = 0x00008;
+        
+        // Win32 authentication error codes
+        private const int ERROR_LOGON_FAILURE = 1326;
+        private const int ERROR_ACCOUNT_RESTRICTION = 1327;
+        private const int ERROR_INVALID_LOGON_HOURS = 1328;
+        private const int ERROR_INVALID_WORKSTATION = 1329;
+        private const int ERROR_PASSWORD_EXPIRED = 1330;
+        private const int ERROR_ACCOUNT_DISABLED = 1331;
 
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
         private struct CREDUI_INFO
@@ -160,20 +168,24 @@ namespace McK.KCC
         /// Restarts the application prompting for different user credentials.
         /// Uses Windows CredUI API to show a standard credentials dialog that allows
         /// the user to enter username and password, defaulting to the current domain.
+        /// The dialog will re-prompt if credentials are invalid.
         /// </summary>
-        /// <returns>True if the restart was initiated, false if it failed or cancelled.</returns>
+        /// <returns>True if the restart was initiated, false if it failed or was cancelled.</returns>
         public static bool RestartAsDifferentUser()
         {
-            try
-            {
-                var exePath = GetExecutablePath();
-                
-                if (string.IsNullOrEmpty(exePath))
-                    return false;
+            var exePath = GetExecutablePath();
+            
+            if (string.IsNullOrEmpty(exePath))
+                return false;
 
-                // Get the current domain for the default username
-                string domain = Environment.UserDomainName;
-                
+            // Get the current domain for the default username
+            string domain = Environment.UserDomainName;
+            
+            // Keep prompting until user cancels or provides valid credentials
+            int lastAuthError = 0;
+            
+            while (true)
+            {
                 // Prepare username with domain prefix as default
                 var userNameBuilder = new StringBuilder(domain + @"\", CREDUI_MAX_USERNAME_LENGTH);
                 var passwordBuilder = new StringBuilder(CREDUI_MAX_PASSWORD_LENGTH);
@@ -182,7 +194,9 @@ namespace McK.KCC
                 {
                     cbSize = Marshal.SizeOf(typeof(CREDUI_INFO)),
                     hwndParent = IntPtr.Zero,
-                    pszMessageText = "Enter credentials for a user account with registry write permissions.",
+                    pszMessageText = lastAuthError != 0 
+                        ? "The username or password is incorrect. Please try again."
+                        : "Enter credentials for a user account with registry write permissions.",
                     pszCaptionText = "Keeper Configuration Creator - User Credentials",
                     hbmBanner = IntPtr.Zero
                 };
@@ -197,7 +211,7 @@ namespace McK.KCC
                     ref credUI,
                     "KeeperConfigCreator",
                     IntPtr.Zero,
-                    0,
+                    lastAuthError,
                     userNameBuilder,
                     CREDUI_MAX_USERNAME_LENGTH,
                     passwordBuilder,
@@ -229,6 +243,11 @@ namespace McK.KCC
                     userNameOnly = parts[0];
                     userDomain = parts[1];
                 }
+                else
+                {
+                    // No domain specified, use current domain
+                    userDomain = domain;
+                }
 
                 // Create a SecureString for the password
                 var securePassword = new SecureString();
@@ -251,21 +270,58 @@ namespace McK.KCC
                         LoadUserProfile = true,
                         UserName = userNameOnly,
                         Password = securePassword,
-                        Domain = userDomain ?? domain
+                        Domain = userDomain
                     };
 
-                    Process.Start(processInfo);
-                    return true;
+                    var process = Process.Start(processInfo);
+                    
+                    // Check if process started successfully
+                    if (process != null)
+                    {
+                        return true;
+                    }
+                    
+                    // Process.Start returned null - this can happen for various reasons
+                    // but typically indicates the process couldn't be started
+                    return false;
+                }
+                catch (System.ComponentModel.Win32Exception ex)
+                {
+                    // Check for authentication-related errors that should trigger re-prompt
+                    if (IsAuthenticationError(ex.NativeErrorCode))
+                    {
+                        // Re-prompt with the error
+                        lastAuthError = ex.NativeErrorCode;
+                        continue;
+                    }
+                    
+                    // Other Win32 errors - don't retry
+                    return false;
+                }
+                catch (Exception)
+                {
+                    return false;
                 }
                 finally
                 {
                     securePassword.Dispose();
                 }
             }
-            catch (Exception)
-            {
-                return false;
-            }
+        }
+
+        /// <summary>
+        /// Determines if the given Win32 error code is an authentication-related error.
+        /// </summary>
+        /// <param name="errorCode">The Win32 error code to check.</param>
+        /// <returns>True if the error is authentication-related, false otherwise.</returns>
+        private static bool IsAuthenticationError(int errorCode)
+        {
+            return errorCode == ERROR_LOGON_FAILURE ||
+                   errorCode == ERROR_ACCOUNT_RESTRICTION ||
+                   errorCode == ERROR_INVALID_LOGON_HOURS ||
+                   errorCode == ERROR_INVALID_WORKSTATION ||
+                   errorCode == ERROR_PASSWORD_EXPIRED ||
+                   errorCode == ERROR_ACCOUNT_DISABLED;
         }
 
         /// <summary>
