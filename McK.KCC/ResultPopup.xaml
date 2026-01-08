@@ -40,8 +40,8 @@
                 Click="BtnHuzzah_Click" Margin="0,16,0,0"
                 HorizontalAlignment="Stretch" Padding="20,14">
             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-                <TextBlock Text="🎉" FontSize="16" Margin="0,0,10,0"/>
-                <TextBlock Text="HUZZAH!" FontSize="14" FontWeight="SemiBold"/>
+                <TextBlock Text="✓" FontSize="16" Margin="0,0,10,0"/>
+                <TextBlock Text="Change Confirmed" FontSize="14" FontWeight="SemiBold"/>
             </StackPanel>
         </Button>
     </Grid>

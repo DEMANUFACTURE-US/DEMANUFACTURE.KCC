@@ -254,6 +254,17 @@ namespace McK.KCC
                 
                 // Add separator item
                 var itemsWithSeparator = new List<object>();
+                
+                // Add "Select Site" as default first item
+                itemsWithSeparator.Add(new IISSiteDisplayItem
+                {
+                    DisplayName = "Select Site",
+                    TextColor = (SolidColorBrush)this.FindResource("TextSecondaryBrush"),
+                    Site = null,
+                    IsSeparator = true,
+                    FontWeight = FontWeights.Normal
+                });
+                
                 var sitesWithoutSetting = sortedSites.Where(s => !s.HasAppSetting).ToList();
                 var sitesWithSetting = sortedSites.Where(s => s.HasAppSetting).ToList();
                 
@@ -274,7 +285,7 @@ namespace McK.KCC
                         itemsWithSeparator.Add(new IISSiteDisplayItem
                         {
                             DisplayName = "   " + site.Name,
-                            TextColor = (SolidColorBrush)this.FindResource("WarningBrush"),
+                            TextColor = (SolidColorBrush)this.FindResource("TextSecondaryBrush"),
                             Site = site
                         });
                     }
@@ -297,13 +308,14 @@ namespace McK.KCC
                         itemsWithSeparator.Add(new IISSiteDisplayItem
                         {
                             DisplayName = "   " + site.Name,
-                            TextColor = (SolidColorBrush)this.FindResource("GreenBrush"),
+                            TextColor = (SolidColorBrush)this.FindResource("TextSecondaryBrush"),
                             Site = site
                         });
                     }
                 }
                 
                 CmbIISSites.ItemsSource = itemsWithSeparator;
+                CmbIISSites.SelectedIndex = 0; // Select "Select Site" by default
             }
             catch (System.Runtime.InteropServices.COMException)
             {
