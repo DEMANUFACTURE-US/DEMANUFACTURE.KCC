@@ -98,8 +98,14 @@ namespace McK.KCC
                     return value != null;
                 }
             }
-            catch
+            catch (System.Security.SecurityException)
             {
+                // User doesn't have permission to access this registry key
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Access denied to this registry key
                 return false;
             }
         }
@@ -280,9 +286,21 @@ namespace McK.KCC
                 
                 CmbIISSites.ItemsSource = itemsWithSeparator;
             }
-            catch
+            catch (System.Runtime.InteropServices.COMException)
             {
                 // IIS might not be installed or accessible
+                CmbIISSites.IsEnabled = false;
+                BtnIISSite.IsEnabled = false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Don't have permission to access IIS
+                CmbIISSites.IsEnabled = false;
+                BtnIISSite.IsEnabled = false;
+            }
+            catch (Exception)
+            {
+                // Other error loading IIS sites - likely IIS not installed
                 CmbIISSites.IsEnabled = false;
                 BtnIISSite.IsEnabled = false;
             }
@@ -306,8 +324,14 @@ namespace McK.KCC
                 }
                 return false;
             }
-            catch
+            catch (System.IO.FileNotFoundException)
             {
+                // Configuration file not found for this site
+                return false;
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Don't have permission to read the configuration
                 return false;
             }
         }
