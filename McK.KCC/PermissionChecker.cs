@@ -136,15 +136,15 @@ namespace McK.KCC
         /// <summary>
         /// Restarts the application with elevated (administrator) privileges.
         /// </summary>
-        /// <returns>True if the restart was initiated, false if it failed.</returns>
-        public static bool RestartAsAdministrator()
+        /// <returns>The started Process if successful, null if it failed.</returns>
+        public static Process? RestartAsAdministrator()
         {
             try
             {
                 var exePath = GetExecutablePath();
                 
                 if (string.IsNullOrEmpty(exePath))
-                    return false;
+                    return null;
 
                 var processInfo = new ProcessStartInfo
                 {
@@ -154,13 +154,12 @@ namespace McK.KCC
                     Arguments = "--elevated"
                 };
 
-                Process.Start(processInfo);
-                return true;
+                return Process.Start(processInfo);
             }
             catch (Exception)
             {
                 // User cancelled UAC or other error
-                return false;
+                return null;
             }
         }
 
@@ -609,15 +608,15 @@ namespace McK.KCC
         /// Restarts the application using previously stored validated credentials.
         /// Used when Stage 3 passes and we need to restart with those credentials.
         /// </summary>
-        /// <returns>True if restart was initiated, false otherwise.</returns>
-        public static bool RestartWithValidatedCredentials()
+        /// <returns>The started Process if successful, null otherwise.</returns>
+        public static Process? RestartWithValidatedCredentials()
         {
             if (_validatedUserName == null || _validatedDomain == null || _validatedPassword == null)
-                return false;
+                return null;
 
             var exePath = GetExecutablePath();
             if (string.IsNullOrEmpty(exePath))
-                return false;
+                return null;
 
             try
             {
@@ -632,12 +631,11 @@ namespace McK.KCC
                     Domain = _validatedDomain
                 };
 
-                var process = Process.Start(processInfo);
-                return process != null;
+                return Process.Start(processInfo);
             }
             catch (Exception)
             {
-                return false;
+                return null;
             }
         }
     }
