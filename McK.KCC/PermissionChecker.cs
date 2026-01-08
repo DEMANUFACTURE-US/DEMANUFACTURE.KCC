@@ -1,6 +1,9 @@
 using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
+using System.Security;
 using System.Security.Principal;
+using System.Text;
 using Microsoft.Win32;
 
 namespace McK.KCC
@@ -12,6 +15,46 @@ namespace McK.KCC
     {
         private const string TestKeyPath = @"SOFTWARE\McK.KCC.PermissionTest";
         private const string TestValueName = "PermissionTestValue";
+
+        #region CredUI Native Methods
+        
+        private const int CREDUI_MAX_USERNAME_LENGTH = 513;
+        private const int CREDUI_MAX_PASSWORD_LENGTH = 256;
+        private const int CREDUI_MAX_DOMAIN_TARGET_LENGTH = 337;
+        
+        // CredUIPromptForCredentials flags
+        private const int CREDUI_FLAGS_GENERIC_CREDENTIALS = 0x40000;
+        private const int CREDUI_FLAGS_DO_NOT_PERSIST = 0x00002;
+        private const int CREDUI_FLAGS_ALWAYS_SHOW_UI = 0x00080;
+        private const int CREDUI_FLAGS_EXPECT_CONFIRMATION = 0x20000;
+        private const int CREDUI_FLAGS_EXCLUDE_CERTIFICATES = 0x00008;
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        private struct CREDUI_INFO
+        {
+            public int cbSize;
+            public IntPtr hwndParent;
+            [MarshalAs(UnmanagedType.LPWStr)]
+            public string pszMessageText;
+            [MarshalAs(UnmanagedType.LPWStr)]
+            public string pszCaptionText;
+            public IntPtr hbmBanner;
+        }
+
+        [DllImport("credui.dll", CharSet = CharSet.Unicode)]
+        private static extern int CredUIPromptForCredentialsW(
+            ref CREDUI_INFO pUiInfo,
+            string pszTargetName,
+            IntPtr Reserved,
+            int dwAuthError,
+            StringBuilder pszUserName,
+            int ulUserNameMaxChars,
+            StringBuilder pszPassword,
+            int ulPasswordMaxChars,
+            ref bool pfSave,
+            int dwFlags);
+
+        #endregion
 
         /// <summary>
         /// Checks if the current user has permission to write to the registry.
@@ -115,9 +158,10 @@ namespace McK.KCC
 
         /// <summary>
         /// Restarts the application prompting for different user credentials.
-        /// Uses Windows built-in runas functionality to prompt for credentials.
+        /// Uses Windows CredUI API to show a standard credentials dialog that allows
+        /// the user to enter username and password, defaulting to the current domain.
         /// </summary>
-        /// <returns>True if the restart was initiated, false if it failed.</returns>
+        /// <returns>True if the restart was initiated, false if it failed or cancelled.</returns>
         public static bool RestartAsDifferentUser()
         {
             try
@@ -127,17 +171,85 @@ namespace McK.KCC
                 if (string.IsNullOrEmpty(exePath))
                     return false;
 
-                // Use runas.exe directly without cmd.exe to avoid command injection
-                // The /noprofile flag speeds up the process by not loading the user profile
-                // The /user: flag without a specific user will prompt for credentials
+                // Get the current domain for the default username
+                string domain = Environment.UserDomainName;
+                
+                // Prepare username with domain prefix as default
+                var userNameBuilder = new StringBuilder(domain + @"\", CREDUI_MAX_USERNAME_LENGTH);
+                var passwordBuilder = new StringBuilder(CREDUI_MAX_PASSWORD_LENGTH);
+                
+                var credUI = new CREDUI_INFO
+                {
+                    cbSize = Marshal.SizeOf(typeof(CREDUI_INFO)),
+                    hwndParent = IntPtr.Zero,
+                    pszMessageText = "Enter credentials for a user account with registry write permissions.",
+                    pszCaptionText = "Keeper Configuration Creator - User Credentials",
+                    hbmBanner = IntPtr.Zero
+                };
+
+                bool save = false;
+                int flags = CREDUI_FLAGS_GENERIC_CREDENTIALS | 
+                            CREDUI_FLAGS_DO_NOT_PERSIST | 
+                            CREDUI_FLAGS_ALWAYS_SHOW_UI |
+                            CREDUI_FLAGS_EXCLUDE_CERTIFICATES;
+                
+                int result = CredUIPromptForCredentialsW(
+                    ref credUI,
+                    "KeeperConfigCreator",
+                    IntPtr.Zero,
+                    0,
+                    userNameBuilder,
+                    CREDUI_MAX_USERNAME_LENGTH,
+                    passwordBuilder,
+                    CREDUI_MAX_PASSWORD_LENGTH,
+                    ref save,
+                    flags);
+                
+                // User cancelled the dialog
+                if (result != 0)
+                    return false;
+                
+                string userName = userNameBuilder.ToString();
+                string password = passwordBuilder.ToString();
+                
+                // Parse domain and username if provided in DOMAIN\user format
+                string? userDomain = null;
+                string userNameOnly = userName;
+                
+                if (userName.Contains('\\'))
+                {
+                    var parts = userName.Split('\\', 2);
+                    userDomain = parts[0];
+                    userNameOnly = parts[1];
+                }
+                else if (userName.Contains('@'))
+                {
+                    // Handle user@domain format
+                    var parts = userName.Split('@', 2);
+                    userNameOnly = parts[0];
+                    userDomain = parts[1];
+                }
+
+                // Create a SecureString for the password
+                var securePassword = new SecureString();
+                foreach (char c in password)
+                {
+                    securePassword.AppendChar(c);
+                }
+                securePassword.MakeReadOnly();
+                
+                // Clear the password from memory
+                passwordBuilder.Clear();
+
                 var processInfo = new ProcessStartInfo
                 {
-                    FileName = "runas.exe",
-                    // Use /savecred to potentially use cached credentials, prompts if not available
-                    // /env passes current environment variables
-                    Arguments = $"/env /savecred /user:Administrator \"{exePath}\" --different-user",
-                    UseShellExecute = true,  // Changed from false to allow credential prompting
-                    CreateNoWindow = false
+                    FileName = exePath,
+                    Arguments = "--different-user",
+                    UseShellExecute = false,
+                    LoadUserProfile = true,
+                    UserName = userNameOnly,
+                    Password = securePassword,
+                    Domain = userDomain ?? domain
                 };
 
                 Process.Start(processInfo);
