@@ -7,6 +7,7 @@ namespace McK.KCC
 {
     /// <summary>
     /// Preloading window that checks registry permissions in 3 stages.
+    /// All stages run sequentially within the same application instance.
     /// </summary>
     public partial class PreloadingWindow : Window
     {
@@ -26,36 +27,31 @@ namespace McK.KCC
 
         private async void PreloadingWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            await RunPermissionChecksAsync();
+            await RunAllPermissionChecksAsync();
         }
 
-        private async Task RunPermissionChecksAsync()
+        private async Task RunAllPermissionChecksAsync()
         {
-            int currentStage = PermissionChecker.GetCurrentStage();
-
-            // Update UI to show which stage we're at
-            UpdateStageVisuals(currentStage);
-
             // Small delay to let UI render
             await Task.Delay(500);
 
             if (_cancelled) return;
 
-            switch (currentStage)
-            {
-                case 1:
-                    await RunStage1Async();
-                    break;
-                case 2:
-                    await RunStage2Async();
-                    break;
-                case 3:
-                    await RunStage3Async();
-                    break;
-            }
+            // Run all stages sequentially - stop when one succeeds
+            
+            // Stage 1: Check current user permissions
+            bool stage1Success = await RunStage1Async();
+            if (stage1Success || _cancelled) return;
+
+            // Stage 2: Check with administrator elevation
+            bool stage2Success = await RunStage2Async();
+            if (stage2Success || _cancelled) return;
+
+            // Stage 3: Check with different user credentials
+            await RunStage3Async();
         }
 
-        private async Task RunStage1Async()
+        private async Task<bool> RunStage1Async()
         {
             UpdateStatus("Checking current user permissions...", 
                 "Testing if the current user can make changes to the Windows registry.");
@@ -64,7 +60,7 @@ namespace McK.KCC
             
             await Task.Delay(1000); // Give user time to see the status
 
-            if (_cancelled) return;
+            if (_cancelled) return false;
 
             bool canWrite = PermissionChecker.CanWriteToRegistry();
 
@@ -77,55 +73,38 @@ namespace McK.KCC
 
                 await Task.Delay(1000);
                 
-                if (_cancelled) return;
+                if (_cancelled) return false;
                 
                 _permissionGranted = true;
                 Close();
+                return true;
             }
             else
             {
                 SetStageFailed(1);
+                Stage1Status.Text = "Insufficient permissions";
                 UpdateStatus("Elevating privileges...", 
-                    "Current user lacks permissions. Restarting as Administrator...",
+                    "Current user lacks permissions. Requesting administrator access...",
                     isWarning: true);
 
-                await Task.Delay(1500);
-
-                if (_cancelled) return;
-
-                // Proceed to Stage 2 - restart as administrator
-                bool restarted = PermissionChecker.RestartAsAdministrator();
-                
-                if (restarted)
-                {
-                    // Close this instance - the elevated instance will handle it
-                    Application.Current.Shutdown();
-                }
-                else
-                {
-                    UpdateStatus("Elevation cancelled", 
-                        "User cancelled administrator elevation. Application cannot continue without proper permissions.",
-                        isError: true);
-                }
+                await Task.Delay(1000);
+                return false;
             }
         }
 
-        private async Task RunStage2Async()
+        private async Task<bool> RunStage2Async()
         {
-            // Mark Stage 1 as failed (since we're here, Stage 1 didn't work)
-            SetStageFailed(1);
-            Stage1Status.Text = "Insufficient permissions";
-
             UpdateStatus("Checking administrator permissions...", 
-                "Testing if the administrator account can make changes to the Windows registry.");
+                "Testing if administrator account can make changes to the Windows registry.\nA UAC prompt may appear.");
 
             SetStageInProgress(2);
             
-            await Task.Delay(1000);
+            await Task.Delay(500);
 
-            if (_cancelled) return;
+            if (_cancelled) return false;
 
-            bool canWrite = PermissionChecker.CanWriteToRegistry();
+            // Use helper process to check permissions with elevation
+            bool canWrite = PermissionChecker.CheckPermissionElevated();
 
             if (canWrite)
             {
@@ -136,56 +115,38 @@ namespace McK.KCC
 
                 await Task.Delay(1000);
 
-                if (_cancelled) return;
+                if (_cancelled) return false;
 
                 _permissionGranted = true;
                 Close();
+                return true;
             }
             else
             {
                 SetStageFailed(2);
+                Stage2Status.Text = "Insufficient permissions";
                 UpdateStatus("Requesting different user credentials...", 
-                    "Administrator lacks permissions. Attempting to run as a different user...",
+                    "Administrator lacks permissions or elevation was cancelled. Attempting to use different user credentials...",
                     isWarning: true);
 
-                await Task.Delay(1500);
-
-                if (_cancelled) return;
-
-                // Proceed to Stage 3 - Run as different user
-                bool restarted = PermissionChecker.RestartAsDifferentUser();
-                
-                if (restarted)
-                {
-                    Application.Current.Shutdown();
-                }
-                else
-                {
-                    UpdateStatus("Failed to restart", 
-                        "Could not launch application as different user. Please manually run as a user with registry access.",
-                        isError: true);
-                }
+                await Task.Delay(1000);
+                return false;
             }
         }
 
         private async Task RunStage3Async()
         {
-            // Mark Stages 1 and 2 as failed
-            SetStageFailed(1);
-            Stage1Status.Text = "Insufficient permissions";
-            SetStageFailed(2);
-            Stage2Status.Text = "Insufficient permissions";
-
             UpdateStatus("Checking different user permissions...", 
-                "Testing if the provided user credentials have registry write access.");
+                "Please enter credentials for a user account with registry write access.");
 
             SetStageInProgress(3);
             
-            await Task.Delay(1000);
+            await Task.Delay(500);
 
             if (_cancelled) return;
 
-            bool canWrite = PermissionChecker.CanWriteToRegistry();
+            // Use helper process to check permissions with different credentials
+            bool canWrite = PermissionChecker.CheckPermissionAsDifferentUser();
 
             if (canWrite)
             {
@@ -214,23 +175,6 @@ namespace McK.KCC
 
                 // Show the permission denied window and close this one
                 ShowPermissionDeniedWindow();
-            }
-        }
-
-        private void UpdateStageVisuals(int currentStage)
-        {
-            // All stages before current are marked based on their actual state
-            // Stages at and after current are pending
-            if (currentStage >= 2)
-            {
-                SetStageFailed(1);
-                Stage1Status.Text = "Insufficient permissions";
-            }
-
-            if (currentStage >= 3)
-            {
-                SetStageFailed(2);
-                Stage2Status.Text = "Insufficient permissions";
             }
         }
 

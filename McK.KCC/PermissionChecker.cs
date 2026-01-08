@@ -340,5 +340,220 @@ namespace McK.KCC
             }
             return 1;
         }
+
+        /// <summary>
+        /// Checks if permission can be obtained by running an elevated (administrator) process.
+        /// This spawns a helper process with admin privileges that checks registry access and returns the result.
+        /// The current application continues running.
+        /// </summary>
+        /// <returns>True if elevated process can write to registry, false otherwise.</returns>
+        public static bool CheckPermissionElevated()
+        {
+            try
+            {
+                var exePath = GetExecutablePath();
+                
+                if (string.IsNullOrEmpty(exePath))
+                    return false;
+
+                var processInfo = new ProcessStartInfo
+                {
+                    FileName = exePath,
+                    UseShellExecute = true,
+                    Verb = "runas", // This triggers UAC elevation
+                    Arguments = "--check-permission-only",
+                    CreateNoWindow = true
+                };
+
+                var process = Process.Start(processInfo);
+                if (process == null)
+                    return false;
+
+                process.WaitForExit(30000); // Wait up to 30 seconds
+                
+                // Exit code 0 means permission check succeeded
+                return process.ExitCode == 0;
+            }
+            catch (Exception)
+            {
+                // User cancelled UAC or other error
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// Prompts for user credentials and checks if that user can write to the registry.
+        /// This spawns a helper process with the provided credentials that checks registry access and returns the result.
+        /// The current application continues running.
+        /// </summary>
+        /// <returns>True if the user credentials have registry write access, false otherwise.</returns>
+        public static bool CheckPermissionAsDifferentUser()
+        {
+            var exePath = GetExecutablePath();
+            
+            if (string.IsNullOrEmpty(exePath))
+                return false;
+
+            // Get the current domain for the default username
+            string domain = Environment.UserDomainName;
+            
+            // Keep prompting until user cancels or provides valid credentials
+            int lastAuthError = 0;
+            
+            while (true)
+            {
+                // Prepare username with domain prefix as default
+                var userNameBuilder = new StringBuilder(domain + @"\", CREDUI_MAX_USERNAME_LENGTH);
+                var passwordBuilder = new StringBuilder(CREDUI_MAX_PASSWORD_LENGTH);
+                
+                var credUI = new CREDUI_INFO
+                {
+                    cbSize = Marshal.SizeOf(typeof(CREDUI_INFO)),
+                    hwndParent = IntPtr.Zero,
+                    pszMessageText = lastAuthError != 0 
+                        ? "The username or password is incorrect. Please try again."
+                        : "Enter credentials for a user account with registry write permissions.",
+                    pszCaptionText = "Keeper Configuration Creator - User Credentials",
+                    hbmBanner = IntPtr.Zero
+                };
+
+                bool save = false;
+                int flags = CREDUI_FLAGS_GENERIC_CREDENTIALS | 
+                            CREDUI_FLAGS_DO_NOT_PERSIST | 
+                            CREDUI_FLAGS_ALWAYS_SHOW_UI |
+                            CREDUI_FLAGS_EXCLUDE_CERTIFICATES;
+                
+                int result = CredUIPromptForCredentialsW(
+                    ref credUI,
+                    "KeeperConfigCreator",
+                    IntPtr.Zero,
+                    lastAuthError,
+                    userNameBuilder,
+                    CREDUI_MAX_USERNAME_LENGTH,
+                    passwordBuilder,
+                    CREDUI_MAX_PASSWORD_LENGTH,
+                    ref save,
+                    flags);
+                
+                // User cancelled the dialog
+                if (result != 0)
+                    return false;
+                
+                string userName = userNameBuilder.ToString();
+                string password = passwordBuilder.ToString();
+                
+                // Parse domain and username if provided in DOMAIN\user format
+                string? userDomain = null;
+                string userNameOnly = userName;
+                
+                if (userName.Contains('\\'))
+                {
+                    var parts = userName.Split('\\', 2);
+                    userDomain = parts[0];
+                    userNameOnly = parts[1];
+                }
+                else if (userName.Contains('@'))
+                {
+                    // Handle user@domain format
+                    var parts = userName.Split('@', 2);
+                    userNameOnly = parts[0];
+                    userDomain = parts[1];
+                }
+                else
+                {
+                    // No domain specified, use current domain
+                    userDomain = domain;
+                }
+
+                // Create a SecureString for the password
+                var securePassword = new SecureString();
+                foreach (char c in password)
+                {
+                    securePassword.AppendChar(c);
+                }
+                securePassword.MakeReadOnly();
+                
+                // Clear the password from memory
+                passwordBuilder.Clear();
+
+                try
+                {
+                    var processInfo = new ProcessStartInfo
+                    {
+                        FileName = exePath,
+                        Arguments = "--check-permission-only",
+                        UseShellExecute = false,
+                        LoadUserProfile = true,
+                        UserName = userNameOnly,
+                        Password = securePassword,
+                        Domain = userDomain,
+                        CreateNoWindow = true
+                    };
+
+                    var process = Process.Start(processInfo);
+                    
+                    if (process == null)
+                        return false;
+
+                    process.WaitForExit(30000); // Wait up to 30 seconds
+                    
+                    // Exit code 0 means permission check succeeded
+                    if (process.ExitCode == 0)
+                    {
+                        return true;
+                    }
+                    
+                    // Permission check failed, but credentials were valid - user just doesn't have permissions
+                    // Return false to indicate failure
+                    return false;
+                }
+                catch (System.ComponentModel.Win32Exception ex)
+                {
+                    // Check for authentication-related errors that should trigger re-prompt
+                    if (IsAuthenticationError(ex.NativeErrorCode))
+                    {
+                        // Re-prompt with the error
+                        lastAuthError = ex.NativeErrorCode;
+                        continue;
+                    }
+                    
+                    // Other Win32 errors - don't retry
+                    return false;
+                }
+                catch (Exception)
+                {
+                    return false;
+                }
+                finally
+                {
+                    securePassword.Dispose();
+                }
+            }
+        }
+
+        /// <summary>
+        /// Checks if this is a permission-check-only invocation (used by helper processes).
+        /// </summary>
+        /// <returns>True if this is a permission check only run.</returns>
+        public static bool IsPermissionCheckOnly()
+        {
+            var args = Environment.GetCommandLineArgs();
+            foreach (var arg in args)
+            {
+                if (arg == "--check-permission-only")
+                    return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Runs the permission check and exits with appropriate exit code.
+        /// Exit code 0 = permission granted, 1 = permission denied.
+        /// </summary>
+        public static void RunPermissionCheckAndExit()
+        {
+            bool canWrite = CanWriteToRegistry();
+            Environment.Exit(canWrite ? 0 : 1);
+        }
     }
 }
