@@ -2,7 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Keeper Configuration Creator" 
-        Height="600" Width="700"
+        Height="650" Width="800"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize"
         Icon="Resources/mckcircle.png"
@@ -17,9 +17,6 @@
         <!-- Header -->
         <StackPanel Grid.Row="0" HorizontalAlignment="Stretch" Margin="0,0,0,20">
             <Image Source="Resources/mck.png" HorizontalAlignment="Stretch" Stretch="Uniform" MaxHeight="80"/>
-            <TextBlock Text="Keeper Configuration Creator" FontSize="22" FontWeight="Bold" 
-                       Foreground="{StaticResource TextPrimaryBrush}" 
-                       HorizontalAlignment="Center" Margin="0,12,0,0"/>
         </StackPanel>
         
         <!-- TabControl -->
@@ -29,9 +26,11 @@
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="0,20,0,0">
                         <TextBlock Text="Manage registry entries for KeeperConfig" 
-                                   FontSize="14" 
-                                   Foreground="{StaticResource TextSecondaryBrush}" 
+                                   FontSize="16" 
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource TextPrimaryBrush}" 
                                    Margin="0,0,0,20"
+                                   HorizontalAlignment="Stretch"
                                    TextWrapping="Wrap"/>
                         
                         <!-- User Scope -->
@@ -40,32 +39,20 @@
                                 CornerRadius="8" 
                                 Padding="16" 
                                 Margin="0,0,0,16">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
-                                
-                                <TextBlock Text="User Scope" 
-                                           FontSize="16" 
-                                           FontWeight="SemiBold" 
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock x:Name="UserScopeText"
+                                           FontSize="14" 
                                            Foreground="{StaticResource TextPrimaryBrush}" 
-                                           Margin="0,0,0,12"/>
-                                
-                                <StackPanel Grid.Row="1" Orientation="Horizontal">
-                                    <TextBlock Text="HKEY_CURRENT_USER\Environment" 
-                                               FontFamily="Consolas" 
-                                               FontSize="12" 
-                                               Foreground="{StaticResource TextSecondaryBrush}" 
-                                               VerticalAlignment="Center"/>
-                                    <Button x:Name="BtnUserScope" 
-                                            Margin="16,0,0,0" 
-                                            Padding="12,6" 
-                                            Click="BtnUserScope_Click">
-                                        <TextBlock x:Name="BtnUserScopeText" FontSize="12" FontWeight="SemiBold"/>
-                                    </Button>
-                                </StackPanel>
-                            </Grid>
+                                           VerticalAlignment="Center"
+                                           TextWrapping="Wrap"/>
+                                <Button x:Name="BtnUserScope" 
+                                        Margin="12,0,0,0" 
+                                        Padding="16,8" 
+                                        Click="BtnUserScope_Click"
+                                        MinWidth="100">
+                                    <TextBlock x:Name="BtnUserScopeText" FontSize="13" FontWeight="SemiBold"/>
+                                </Button>
+                            </StackPanel>
                         </Border>
                         
                         <!-- System Scope -->
@@ -74,47 +61,35 @@
                                 CornerRadius="8" 
                                 Padding="16" 
                                 Margin="0,0,0,16">
-                            <Grid>
-                                <Grid.RowDefinitions>
-                                    <RowDefinition Height="Auto"/>
-                                    <RowDefinition Height="Auto"/>
-                                </Grid.RowDefinitions>
-                                
-                                <TextBlock Text="System Scope" 
-                                           FontSize="16" 
-                                           FontWeight="SemiBold" 
+                            <StackPanel Orientation="Horizontal">
+                                <TextBlock x:Name="SystemScopeText"
+                                           FontSize="14" 
                                            Foreground="{StaticResource TextPrimaryBrush}" 
-                                           Margin="0,0,0,12"/>
-                                
-                                <StackPanel Grid.Row="1" Orientation="Horizontal">
-                                    <TextBlock Text="HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\Session Manager\Environment" 
-                                               FontFamily="Consolas" 
-                                               FontSize="12" 
-                                               Foreground="{StaticResource TextSecondaryBrush}" 
-                                               VerticalAlignment="Center"
-                                               TextWrapping="Wrap"
-                                               MaxWidth="400"/>
-                                    <Button x:Name="BtnSystemScope" 
-                                            Margin="16,0,0,0" 
-                                            Padding="12,6" 
-                                            Click="BtnSystemScope_Click">
-                                        <TextBlock x:Name="BtnSystemScopeText" FontSize="12" FontWeight="SemiBold"/>
-                                    </Button>
-                                </StackPanel>
-                            </Grid>
+                                           VerticalAlignment="Center"
+                                           TextWrapping="Wrap"/>
+                                <Button x:Name="BtnSystemScope" 
+                                        Margin="12,0,0,0" 
+                                        Padding="16,8" 
+                                        Click="BtnSystemScope_Click"
+                                        MinWidth="100">
+                                    <TextBlock x:Name="BtnSystemScopeText" FontSize="13" FontWeight="SemiBold"/>
+                                </Button>
+                            </StackPanel>
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
             
-            <!-- Tab 2: IIS Registrations -->
-            <TabItem Header="IIS Registrations">
+            <!-- Tab 2: IIS Registration -->
+            <TabItem Header="IIS Registration">
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
                     <StackPanel Margin="0,20,0,0">
-                        <TextBlock Text="Manage IIS site application settings for KeeperConfig" 
-                                   FontSize="14" 
-                                   Foreground="{StaticResource TextSecondaryBrush}" 
+                        <TextBlock Text="Manage IIS Site Application Settings for Keeper Config" 
+                                   FontSize="16" 
+                                   FontWeight="Bold"
+                                   Foreground="{StaticResource TextPrimaryBrush}" 
                                    Margin="0,0,0,20"
+                                   HorizontalAlignment="Stretch"
                                    TextWrapping="Wrap"/>
                         
                         <TextBlock Text="Select IIS Site:" 
@@ -129,17 +104,18 @@
                             <ComboBox.ItemTemplate>
                                 <DataTemplate>
                                     <TextBlock Text="{Binding DisplayName}" 
-                                               Foreground="{Binding TextColor}"/>
+                                               Foreground="{Binding TextColor}"
+                                               FontWeight="{Binding FontWeight}"/>
                                 </DataTemplate>
                             </ComboBox.ItemTemplate>
                         </ComboBox>
                         
                         <Button x:Name="BtnIISSite" 
-                                Padding="12,8" 
+                                Padding="16,10" 
                                 Click="BtnIISSite_Click"
                                 IsEnabled="False"
-                                HorizontalAlignment="Left">
-                            <TextBlock x:Name="BtnIISSiteText" FontSize="13" FontWeight="SemiBold"/>
+                                HorizontalAlignment="Stretch">
+                            <TextBlock x:Name="BtnIISSiteText" FontSize="14" FontWeight="SemiBold"/>
                         </Button>
                     </StackPanel>
                 </ScrollViewer>
