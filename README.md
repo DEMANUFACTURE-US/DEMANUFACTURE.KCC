@@ -128,7 +128,7 @@ The application uses McKenney's Inc. corporate branding and colors:
 - **Logo**: McKenney's horizontal logo (mck.png)
 - **Icon**: McKenney's circular logo (mckcircle.png)
 
-The color scheme is defined in `Themes/DarkTheme.xaml` and references the brand colors from `Resources/colorsscheme.png`.
+The color scheme is defined in `Themes/DarkTheme.xaml` using colors extracted from `Resources/colorsscheme.png`.
 
 ## License
 
