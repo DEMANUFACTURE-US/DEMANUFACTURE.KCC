@@ -136,7 +136,7 @@ namespace McK.KCC
                     // Use /savecred to potentially use cached credentials, prompts if not available
                     // /env passes current environment variables
                     Arguments = $"/env /savecred /user:Administrator \"{exePath}\" --different-user",
-                    UseShellExecute = false,
+                    UseShellExecute = true,  // Changed from false to allow credential prompting
                     CreateNoWindow = false
                 };
 
