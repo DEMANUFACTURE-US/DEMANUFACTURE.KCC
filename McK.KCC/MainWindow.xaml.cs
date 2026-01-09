@@ -273,8 +273,8 @@ namespace McK.KCC
                 {
                     itemsWithSeparator.Add(new IISSiteDisplayItem
                     {
-                        DisplayName = "── Sites Without Keeper Config ──",
-                        TextColor = (SolidColorBrush)this.FindResource("TextMutedBrush"),
+                        DisplayName = "━━ Sites Without Keeper Config (Needs to be Added) ━━",
+                        TextColor = (SolidColorBrush)this.FindResource("WarningBrush"),
                         Site = null,
                         IsSeparator = true,
                         FontWeight = FontWeights.Bold
@@ -285,7 +285,7 @@ namespace McK.KCC
                         itemsWithSeparator.Add(new IISSiteDisplayItem
                         {
                             DisplayName = "   " + site.Name,
-                            TextColor = (SolidColorBrush)this.FindResource("TextSecondaryBrush"),
+                            TextColor = (SolidColorBrush)this.FindResource("WarningBrush"),
                             Site = site
                         });
                     }
@@ -296,8 +296,8 @@ namespace McK.KCC
                 {
                     itemsWithSeparator.Add(new IISSiteDisplayItem
                     {
-                        DisplayName = "── Sites With Keeper Config ──",
-                        TextColor = (SolidColorBrush)this.FindResource("TextMutedBrush"),
+                        DisplayName = "━━ Sites With Keeper Config (Already Added) ━━",
+                        TextColor = (SolidColorBrush)this.FindResource("GreenBrush"),
                         Site = null,
                         IsSeparator = true,
                         FontWeight = FontWeights.Bold
@@ -308,7 +308,7 @@ namespace McK.KCC
                         itemsWithSeparator.Add(new IISSiteDisplayItem
                         {
                             DisplayName = "   " + site.Name,
-                            TextColor = (SolidColorBrush)this.FindResource("TextSecondaryBrush"),
+                            TextColor = (SolidColorBrush)this.FindResource("GreenBrush"),
                             Site = site
                         });
                     }
@@ -372,7 +372,7 @@ namespace McK.KCC
             if (CmbIISSites.SelectedItem is IISSiteDisplayItem displayItem && !displayItem.IsSeparator && displayItem.Site != null)
             {
                 var site = displayItem.Site;
-                BtnIISSite.IsEnabled = true;
+                BtnIISSite.Visibility = Visibility.Visible;
                 
                 if (site.HasAppSetting)
                 {
@@ -387,7 +387,7 @@ namespace McK.KCC
             }
             else
             {
-                BtnIISSite.IsEnabled = false;
+                BtnIISSite.Visibility = Visibility.Collapsed;
             }
         }
 
