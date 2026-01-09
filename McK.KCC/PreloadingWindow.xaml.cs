@@ -6,14 +6,26 @@ using System.Windows.Media;
 namespace McK.KCC
 {
     /// <summary>
-    /// Preloading window that checks registry permissions in 3 stages.
-    /// All stages run sequentially within the same application instance.
+    /// The "hang on, checking permissions" splash screen. Runs through three
+    /// stages of permission checks trying to find some way to get registry access.
+    /// Shows nice visual feedback so users know something is hapening.
+    /// 
+    /// Stage 1: Can current user write to registry? (unlikely on a normal PC)
+    /// Stage 2: Can we get admin via UAC? (common path)
+    /// Stage 3: Does the user know another account with rights? (last resort)
     /// </summary>
     public partial class PreloadingWindow : Window
     {
+        // Tracks if any stage succeeded
         private bool _permissionGranted = false;
+        
+        // Set to true if user clicks cancel to abort the whole thing
         private bool _cancelled = false;
 
+        /// <summary>
+        /// Initializes the window and hooks up the Loaded event.
+        /// We cant start async work in the constructor so we wait for Loaded.
+        /// </summary>
         public PreloadingWindow()
         {
             InitializeComponent();
@@ -21,36 +33,49 @@ namespace McK.KCC
         }
 
         /// <summary>
-        /// Gets whether permission was successfully granted.
+        /// Indicates wether permission was successfuly obtained via Stage 1.
+        /// Stages 2 and 3 restart the app so they dont set this flag.
         /// </summary>
         public bool PermissionGranted => _permissionGranted;
 
+        /// <summary>
+        /// Starts the permission checking process once the window is loaded.
+        /// Async void is normally bad but its fine for event handlers.
+        /// </summary>
         private async void PreloadingWindow_Loaded(object sender, RoutedEventArgs e)
         {
             await RunAllPermissionChecksAsync();
         }
 
+        /// <summary>
+        /// Orchestrates running all three permission check stages in sequence.
+        /// Stops as soon as one succeeds. If all fail, shows the denied window.
+        /// </summary>
         private async Task RunAllPermissionChecksAsync()
         {
-            // Small delay to let UI render
+            // Brief delay so the UI can render before we start doing stuff
             await Task.Delay(500);
 
             if (_cancelled) return;
 
-            // Run all stages sequentially - stop when one succeeds
-            
-            // Stage 1: Check current user permissions
+            // Try Stage 1: maybe were already running elevated somehow
             bool stage1Success = await RunStage1Async();
             if (stage1Success || _cancelled) return;
 
-            // Stage 2: Check with administrator elevation
+            // Try Stage 2: UAC elevation
             bool stage2Success = await RunStage2Async();
             if (stage2Success || _cancelled) return;
 
-            // Stage 3: Check with different user credentials
+            // Last ditch: Stage 3 with alternate credentials
             await RunStage3Async();
         }
 
+        /// <summary>
+        /// Stage 1: Check if current user can write to HKLM.
+        /// This is the fastest and simplest check. If it passes we skip
+        /// all the other rigamarole and go straight to the main window.
+        /// </summary>
+        /// <returns>True if current user has perms, false otherwise</returns>
         private async Task<bool> RunStage1Async()
         {
             UpdateStatus("Checking current user permissions...", 
@@ -58,14 +83,17 @@ namespace McK.KCC
 
             SetStageInProgress(1);
             
-            await Task.Delay(1000); // Give user time to see the status
+            // Give the user a second to see whats hapening
+            await Task.Delay(1000);
 
             if (_cancelled) return false;
 
+            // The actual permission test
             bool canWrite = PermissionChecker.CanWriteToRegistry();
 
             if (canWrite)
             {
+                // Sweet, we can write! Mark success and proceed.
                 SetStageSuccess(1);
                 UpdateStatus("Permissions verified!", 
                     "Current user has registry write access. Loading application...",
@@ -81,6 +109,7 @@ namespace McK.KCC
             }
             else
             {
+                // Nope, need to try elevation
                 SetStageFailed(1);
                 Stage1Status.Text = "Insufficient permissions";
                 UpdateStatus("Elevating privileges...", 
@@ -92,6 +121,12 @@ namespace McK.KCC
             }
         }
 
+        /// <summary>
+        /// Stage 2: Try to get admin rights via UAC.
+        /// Spawns a helper process with elevation to test permissions.
+        /// If it works, we restart the whole app as admin.
+        /// </summary>
+        /// <returns>True if elevation succeeded and app is restarting</returns>
         private async Task<bool> RunStage2Async()
         {
             UpdateStatus("Checking administrator permissions...", 
@@ -103,7 +138,7 @@ namespace McK.KCC
 
             if (_cancelled) return false;
 
-            // Use helper process to check permissions with elevation
+            // This shows UAC prompt and waits for the helper process
             bool canWrite = PermissionChecker.CheckPermissionElevated();
 
             if (canWrite)
@@ -117,24 +152,22 @@ namespace McK.KCC
 
                 if (_cancelled) return false;
 
-                // Restart the application with administrator elevation
-                // The restarted app will have the --elevated flag and skip permission checks
+                // Actually restart the app with admin rights now
                 var restartedProcess = PermissionChecker.RestartAsAdministrator();
                 if (restartedProcess != null)
                 {
-                    // Wait briefly and verify the new process is still running
+                    // Make sure it didnt die immediately
                     await Task.Delay(500);
                     
                     if (!restartedProcess.HasExited)
                     {
-                        // Don't set _permissionGranted to true because the current process should exit
-                        // The new elevated process will handle the MainWindow
+                        // New process is running, we can exit
                         Application.Current.Shutdown();
                         return true;
                     }
                     else
                     {
-                        // Process exited immediately - treat as failure
+                        // Process died, thats wierd but move to Stage 3
                         SetStageFailed(2);
                         Stage2Status.Text = "Restart failed";
                         UpdateStatus("Requesting different user credentials...", 
@@ -146,7 +179,7 @@ namespace McK.KCC
                 }
                 else
                 {
-                    // If restart failed, continue to Stage 3
+                    // Restart failed, continue to Stage 3
                     SetStageFailed(2);
                     Stage2Status.Text = "Restart failed";
                     UpdateStatus("Requesting different user credentials...", 
@@ -158,6 +191,7 @@ namespace McK.KCC
             }
             else
             {
+                // UAC denied or admin doesnt have perms either (rare but possible)
                 SetStageFailed(2);
                 Stage2Status.Text = "Insufficient permissions";
                 UpdateStatus("Requesting different user credentials...", 
@@ -169,6 +203,11 @@ namespace McK.KCC
             }
         }
 
+        /// <summary>
+        /// Stage 3: Last resort, prompt for different user credentials.
+        /// Maybe theres a service account or domain admin the user knows about.
+        /// If this fails, we give up and show the permission denied window.
+        /// </summary>
         private async Task RunStage3Async()
         {
             UpdateStatus("Checking different user permissions...", 
@@ -180,8 +219,7 @@ namespace McK.KCC
 
             if (_cancelled) return;
 
-            // Use helper process to check permissions with different credentials
-            // This will also store the validated credentials for reuse
+            // This shows a credential prompt and tests those creds
             bool canWrite = PermissionChecker.CheckPermissionAsDifferentUser();
 
             if (canWrite)
@@ -195,24 +233,21 @@ namespace McK.KCC
 
                 if (_cancelled) return;
 
-                // Restart the application with the validated user credentials
-                // The restarted app will have the --different-user flag and skip permission checks
+                // Restart using the validated credentials we stored
                 var restartedProcess = PermissionChecker.RestartWithValidatedCredentials();
                 if (restartedProcess != null)
                 {
-                    // Wait briefly and verify the new process is still running
                     await Task.Delay(500);
                     
                     if (!restartedProcess.HasExited)
                     {
-                        // Don't set _permissionGranted to true because the current process should exit
-                        // The new process will handle the MainWindow
+                        // We're done here, new process takes over
                         Application.Current.Shutdown();
                         return;
                     }
                     else
                     {
-                        // Process exited immediately - treat as failure
+                        // Something went wrong with the restart
                         SetStageFailed(3);
                         UpdateStatus("Permission check failed", 
                             "Process with user credentials exited unexpectedly.",
@@ -227,7 +262,7 @@ namespace McK.KCC
                 }
                 else
                 {
-                    // If restart failed, show error
+                    // Restart failed
                     SetStageFailed(3);
                     UpdateStatus("Permission check failed", 
                         "Failed to restart with user credentials.",
@@ -242,6 +277,7 @@ namespace McK.KCC
             }
             else
             {
+                // Stage 3 failed too. Were out of options.
                 SetStageFailed(3);
                 UpdateStatus("Permission check failed", 
                     "None of the attempted user credentials have sufficient permissions to modify the Windows registry.",
@@ -251,11 +287,16 @@ namespace McK.KCC
 
                 if (_cancelled) return;
 
-                // Show the permission denied window and close this one
+                // Show the bad news
                 ShowPermissionDeniedWindow();
             }
         }
 
+        /// <summary>
+        /// Updates a stages indicator to show its currently running.
+        /// Blue dot and "Checking..." text.
+        /// </summary>
+        /// <param name="stage">Which stage (1, 2, or 3)</param>
         private void SetStageInProgress(int stage)
         {
             var (icon, status) = GetStageControls(stage);
@@ -268,6 +309,10 @@ namespace McK.KCC
             }
         }
 
+        /// <summary>
+        /// Updates a stages indicator to show success.
+        /// Green checkmark and "Permission granted" text.
+        /// </summary>
         private void SetStageSuccess(int stage)
         {
             var (icon, status) = GetStageControls(stage);
@@ -280,6 +325,10 @@ namespace McK.KCC
             }
         }
 
+        /// <summary>
+        /// Updates a stages indicator to show failure.
+        /// Red X and "Failed" text. How depresing.
+        /// </summary>
         private void SetStageFailed(int stage)
         {
             var (icon, status) = GetStageControls(stage);
@@ -292,6 +341,11 @@ namespace McK.KCC
             }
         }
 
+        /// <summary>
+        /// Helper to get the UI controls for a given stage.
+        /// Using a tuple here because C# is cool like that now.
+        /// </summary>
+        /// <returns>Tuple of (icon TextBlock, status TextBlock)</returns>
         private (System.Windows.Controls.TextBlock? icon, System.Windows.Controls.TextBlock? status) GetStageControls(int stage)
         {
             return stage switch
@@ -299,15 +353,25 @@ namespace McK.KCC
                 1 => (Stage1Icon, Stage1Status),
                 2 => (Stage2Icon, Stage2Status),
                 3 => (Stage3Icon, Stage3Status),
-                _ => (null, null)
+                _ => (null, null)  // Should never happen but makes the compiler happy
             };
         }
 
+        /// <summary>
+        /// Updates the status message box at the bottom of the window.
+        /// Has different colors for different states: info, success, warning, error.
+        /// </summary>
+        /// <param name="title">Main status message</param>
+        /// <param name="message">Secondary descriptive text</param>
+        /// <param name="isSuccess">Green theme</param>
+        /// <param name="isWarning">Yellow/orange theme</param>
+        /// <param name="isError">Red theme</param>
         private void UpdateStatus(string title, string message, bool isSuccess = false, bool isWarning = false, bool isError = false)
         {
             StatusTitle.Text = title;
             StatusMessage.Text = message;
 
+            // Determine colors and icon based on state
             SolidColorBrush brush;
             SolidColorBrush backgroundBrush;
             string icon;
@@ -332,6 +396,7 @@ namespace McK.KCC
             }
             else
             {
+                // Default info state (blue)
                 brush = (SolidColorBrush)FindResource("AccentBrush");
                 backgroundBrush = (SolidColorBrush)FindResource("StatusInfoBackgroundBrush");
                 icon = "⏳";
@@ -343,10 +408,13 @@ namespace McK.KCC
             StatusIcon.Text = icon;
         }
 
+        /// <summary>
+        /// Shows the permission denied window and closes this one.
+        /// Has to be done via the Closed event to ensure proper cleanup.
+        /// </summary>
         private void ShowPermissionDeniedWindow()
         {
-            // Close this window first, then show the permission denied window
-            // Using Closed event to ensure proper window cleanup before showing the new one
+            // Show the denied window AFTER this one closes
             Closed += (s, e) =>
             {
                 var permissionDeniedWindow = new PermissionDeniedWindow();
@@ -355,6 +423,10 @@ namespace McK.KCC
             Close();
         }
 
+        /// <summary>
+        /// Handles the cancel button. Sets the flag and shuts everything down.
+        /// User decided they dont want to deal with permissions today.
+        /// </summary>
         private void BtnCancel_Click(object sender, RoutedEventArgs e)
         {
             _cancelled = true;
